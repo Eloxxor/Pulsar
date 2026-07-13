@@ -47,9 +47,22 @@ class HealthConnectDataSource(private val client: HealthConnectClient) : HealthD
     private suspend inline fun <reified T : androidx.health.connect.client.records.Record> readRecords(
         start: Instant,
         end: Instant
-    ): List<T> = client.readRecords(
-        ReadRecordsRequest(recordType = T::class, timeRangeFilter = TimeRangeFilter.between(start, end))
-    ).records
+    ): List<T> {
+        val allRecords = mutableListOf<T>()
+        var pageToken: String? = null
+        do {
+            val response = client.readRecords(
+                ReadRecordsRequest(
+                    recordType = T::class,
+                    timeRangeFilter = TimeRangeFilter.between(start, end),
+                    pageToken = pageToken ?: ""
+                )
+            )
+            allRecords.addAll(response.records)
+            pageToken = response.pageToken?.ifEmpty { null }
+        } while (pageToken != null)
+        return allRecords
+    }
 
     companion object {
         val REQUIRED_PERMISSIONS: Set<String> = setOf(

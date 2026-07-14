@@ -33,7 +33,7 @@ fun SleepScreen(viewModel: SleepViewModel) {
         uiState.typicalTotalMinutes?.let {
             val diff = uiState.totalMinutes!! - it
             val comparison = if (diff >= 0) "above" else "below"
-            Text("${kotlin.math.abs(diff).toInt()} min $comparison your typical bedtime baseline")
+            Text("${kotlin.math.abs(diff).toInt()} min $comparison your typical sleep duration")
         }
 
         listOf(

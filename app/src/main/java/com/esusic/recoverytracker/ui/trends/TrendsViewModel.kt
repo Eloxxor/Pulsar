@@ -3,7 +3,6 @@ package com.esusic.recoverytracker.ui.trends
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.esusic.recoverytracker.data.HealthRepository
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +20,6 @@ data class TrendsUiState(
     val rhrValues: List<Float> = emptyList()
 )
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class TrendsViewModel(private val repository: HealthRepository) : ViewModel() {
 
     private val selectedRange = MutableStateFlow(TrendRange.WEEK)

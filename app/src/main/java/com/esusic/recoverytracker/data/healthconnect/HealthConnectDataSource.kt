@@ -6,7 +6,10 @@ import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
+import androidx.health.connect.client.records.OxygenSaturationRecord
+import androidx.health.connect.client.records.RespiratoryRateRecord
 import androidx.health.connect.client.records.RestingHeartRateRecord
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
@@ -14,7 +17,10 @@ import androidx.health.connect.client.time.TimeRangeFilter
 import com.esusic.recoverytracker.model.ExerciseSession
 import com.esusic.recoverytracker.model.HeartRateSample
 import com.esusic.recoverytracker.model.HrvSample
+import com.esusic.recoverytracker.model.OxygenSaturationSample
+import com.esusic.recoverytracker.model.RespiratoryRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
+import com.esusic.recoverytracker.model.SkinTemperatureDeltaSample
 import com.esusic.recoverytracker.model.SleepSession
 import java.time.Instant
 
@@ -40,6 +46,15 @@ class HealthConnectDataSource(private val client: HealthConnectClient) : HealthD
 
     override suspend fun exerciseSessions(start: Instant, end: Instant): List<ExerciseSession> =
         HealthConnectRecordMapper.toExerciseSessions(readRecords<ExerciseSessionRecord>(start, end))
+
+    override suspend fun respiratoryRateSamples(start: Instant, end: Instant): List<RespiratoryRateSample> =
+        HealthConnectRecordMapper.toRespiratoryRateSamples(readRecords<RespiratoryRateRecord>(start, end))
+
+    override suspend fun oxygenSaturationSamples(start: Instant, end: Instant): List<OxygenSaturationSample> =
+        HealthConnectRecordMapper.toOxygenSaturationSamples(readRecords<OxygenSaturationRecord>(start, end))
+
+    override suspend fun skinTemperatureDeltaSamples(start: Instant, end: Instant): List<SkinTemperatureDeltaSample> =
+        HealthConnectRecordMapper.toSkinTemperatureDeltaSamples(readRecords<SkinTemperatureRecord>(start, end))
 
     override suspend fun hasAllPermissions(): Boolean =
         client.permissionController.getGrantedPermissions().containsAll(REQUIRED_PERMISSIONS)
@@ -90,7 +105,10 @@ class HealthConnectDataSource(private val client: HealthConnectClient) : HealthD
             HealthPermission.getReadPermission(SleepSessionRecord::class),
             HealthPermission.getReadPermission(StepsRecord::class),
             HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
-            HealthPermission.getReadPermission(ExerciseSessionRecord::class)
+            HealthPermission.getReadPermission(ExerciseSessionRecord::class),
+            HealthPermission.getReadPermission(RespiratoryRateRecord::class),
+            HealthPermission.getReadPermission(OxygenSaturationRecord::class),
+            HealthPermission.getReadPermission(SkinTemperatureRecord::class)
         )
     }
 }

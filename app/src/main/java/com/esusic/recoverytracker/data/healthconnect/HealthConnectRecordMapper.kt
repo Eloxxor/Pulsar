@@ -4,13 +4,19 @@ import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
+import androidx.health.connect.client.records.OxygenSaturationRecord
+import androidx.health.connect.client.records.RespiratoryRateRecord
 import androidx.health.connect.client.records.RestingHeartRateRecord
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import com.esusic.recoverytracker.model.ExerciseSession
 import com.esusic.recoverytracker.model.HeartRateSample
 import com.esusic.recoverytracker.model.HrvSample
+import com.esusic.recoverytracker.model.OxygenSaturationSample
+import com.esusic.recoverytracker.model.RespiratoryRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
+import com.esusic.recoverytracker.model.SkinTemperatureDeltaSample
 import com.esusic.recoverytracker.model.SleepSession
 import com.esusic.recoverytracker.model.SleepStagePeriod
 import com.esusic.recoverytracker.model.SleepStageType
@@ -54,4 +60,13 @@ object HealthConnectRecordMapper {
 
     fun toExerciseSessions(records: List<ExerciseSessionRecord>): List<ExerciseSession> =
         records.map { ExerciseSession(it.startTime, it.endTime, it.exerciseType) }
+
+    fun toRespiratoryRateSamples(records: List<RespiratoryRateRecord>): List<RespiratoryRateSample> =
+        records.map { RespiratoryRateSample(it.time, it.rate) }
+
+    fun toOxygenSaturationSamples(records: List<OxygenSaturationRecord>): List<OxygenSaturationSample> =
+        records.map { OxygenSaturationSample(it.time, it.percentage.value) }
+
+    fun toSkinTemperatureDeltaSamples(records: List<SkinTemperatureRecord>): List<SkinTemperatureDeltaSample> =
+        records.flatMap { record -> record.deltas.map { SkinTemperatureDeltaSample(it.time, it.delta.inCelsius) } }
 }

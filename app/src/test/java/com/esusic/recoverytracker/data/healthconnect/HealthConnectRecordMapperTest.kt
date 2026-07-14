@@ -3,11 +3,17 @@ package com.esusic.recoverytracker.data.healthconnect
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
+import androidx.health.connect.client.records.OxygenSaturationRecord
+import androidx.health.connect.client.records.RespiratoryRateRecord
 import androidx.health.connect.client.records.RestingHeartRateRecord
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.units.Energy
+import androidx.health.connect.client.units.Percentage
+import androidx.health.connect.client.units.Temperature
+import androidx.health.connect.client.units.TemperatureDelta
 import com.esusic.recoverytracker.model.SleepStageType
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -85,5 +91,42 @@ class HealthConnectRecordMapperTest {
             ActiveCaloriesBurnedRecord(base.plus(1, ChronoUnit.HOURS), null, base.plus(2, ChronoUnit.HOURS), null, Energy.kilocalories(80.0), metadata = Metadata.manualEntry())
         )
         assertEquals(200.0, HealthConnectRecordMapper.toTotalActiveCalories(records), 0.0001)
+    }
+
+    @Test
+    fun `maps respiratory rate records`() {
+        val record = RespiratoryRateRecord(
+            time = base, zoneOffset = null, rate = 14.5,
+            metadata = Metadata.manualEntry()
+        )
+        val result = HealthConnectRecordMapper.toRespiratoryRateSamples(listOf(record))
+        assertEquals(14.5, result.single().breathsPerMinute, 0.0001)
+    }
+
+    @Test
+    fun `maps oxygen saturation records`() {
+        val record = OxygenSaturationRecord(
+            time = base, zoneOffset = null, percentage = Percentage(97.0),
+            metadata = Metadata.manualEntry()
+        )
+        val result = HealthConnectRecordMapper.toOxygenSaturationSamples(listOf(record))
+        assertEquals(97.0, result.single().percentage, 0.0001)
+    }
+
+    @Test
+    fun `flattens skin temperature deltas across records`() {
+        val record = SkinTemperatureRecord(
+            startTime = base, startZoneOffset = null,
+            endTime = base.plus(8, ChronoUnit.HOURS), endZoneOffset = null,
+            metadata = Metadata.manualEntry(),
+            deltas = listOf(
+                SkinTemperatureRecord.Delta(base.plus(1, ChronoUnit.HOURS), TemperatureDelta.celsius(-0.5)),
+                SkinTemperatureRecord.Delta(base.plus(2, ChronoUnit.HOURS), TemperatureDelta.celsius(0.3))
+            ),
+            baseline = Temperature.celsius(33.0),
+            measurementLocation = SkinTemperatureRecord.MEASUREMENT_LOCATION_WRIST
+        )
+        val result = HealthConnectRecordMapper.toSkinTemperatureDeltaSamples(listOf(record))
+        assertEquals(listOf(-0.5, 0.3), result.map { it.deltaCelsius })
     }
 }

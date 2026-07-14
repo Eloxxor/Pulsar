@@ -140,4 +140,18 @@ class AggregationServiceTest {
         val result = AggregationService(source).aggregateForDate(date, zone)
         assertEquals(later, result.latestHeartRateSample)
     }
+
+    @Test
+    fun `heartRateSamplesForSession queries the session's exact window, not the calendar day`() = runTest {
+        val sessionStart = dayStart.minusSeconds(3600) // 23:00 the previous day, outside the calendar-day window
+        val sessionEnd = dayStart.plusSeconds(3600)
+        val sampleInWindow = HeartRateSample(sessionStart.plusSeconds(60), 55L)
+        val sampleOutsideWindow = HeartRateSample(sessionEnd.plusSeconds(3600), 90L)
+        val source = FakeHealthDataSource(heartRate = listOf(sampleInWindow, sampleOutsideWindow))
+        val session = SleepSession(sessionStart, sessionEnd, emptyList())
+
+        val result = AggregationService(source).heartRateSamplesForSession(session)
+
+        assertEquals(listOf(sampleInWindow), result)
+    }
 }

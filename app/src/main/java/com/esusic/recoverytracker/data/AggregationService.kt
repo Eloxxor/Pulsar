@@ -2,6 +2,8 @@ package com.esusic.recoverytracker.data
 
 import com.esusic.recoverytracker.data.healthconnect.HealthDataSource
 import com.esusic.recoverytracker.model.DailyAggregate
+import com.esusic.recoverytracker.model.HeartRateSample
+import com.esusic.recoverytracker.model.SleepSession
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -56,4 +58,7 @@ class AggregationService(private val dataSource: HealthDataSource) {
             latestHeartRateSample = latestHeartRateSample
         )
     }
+
+    suspend fun heartRateSamplesForSession(session: SleepSession): List<HeartRateSample> =
+        dataSource.heartRateSamples(session.start, session.end)
 }

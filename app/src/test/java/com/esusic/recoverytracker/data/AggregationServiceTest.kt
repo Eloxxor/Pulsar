@@ -59,6 +59,21 @@ class AggregationServiceTest {
     }
 
     @Test
+    fun `cross-midnight sleep session is attributed to the wake-up day, not the day it started`() = runTest {
+        // Person goes to bed at 23:30 the night before and wakes up at 07:00 on the target date.
+        // The session's `start` instant falls on the previous calendar day, but it should still
+        // be selected as the target date's sleep because that's the day the person woke up.
+        val previousNightStart = dayStart.minusSeconds(30 * 60) // 23:30 the day before
+        val wakeUpEnd = dayStart.plusSeconds(7 * 3600) // 07:00 on the target date
+        val crossMidnightSession = SleepSession(previousNightStart, wakeUpEnd, emptyList())
+        val source = FakeHealthDataSource(sleep = listOf(crossMidnightSession))
+
+        val result = AggregationService(source).aggregateForDate(date, zone)
+
+        assertEquals(crossMidnightSession, result.sleep)
+    }
+
+    @Test
     fun `isComplete is true only when both heart rate samples and sleep are present`() = runTest {
         val complete = AggregationService(
             FakeHealthDataSource(

@@ -11,10 +11,17 @@ class AggregationService(private val dataSource: HealthDataSource) {
         val start = date.atStartOfDay(zone).toInstant()
         val end = date.plusDays(1).atStartOfDay(zone).toInstant()
 
+        // Sleep sessions typically start the evening before the day they belong to (the day the
+        // person wakes up). Query a wider window covering the prior evening through the end of
+        // the target day, then keep only sessions that woke the person up on this calendar day.
+        val sleepWindowStart = date.minusDays(1).atTime(18, 0).atZone(zone).toInstant()
+
         val heartRateSamples = dataSource.heartRateSamples(start, end)
         val hrvSamples = dataSource.hrvSamples(start, end)
         val restingHrSamples = dataSource.restingHeartRate(start, end)
-        val sleep = dataSource.sleepSessions(start, end).maxByOrNull { it.durationMinutes }
+        val sleep = dataSource.sleepSessions(sleepWindowStart, end)
+            .filter { it.end >= start && it.end < end }
+            .maxByOrNull { it.durationMinutes }
         val steps = dataSource.totalSteps(start, end)
         val activeCalories = dataSource.totalActiveCalories(start, end)
         val exerciseSessions = dataSource.exerciseSessions(start, end)

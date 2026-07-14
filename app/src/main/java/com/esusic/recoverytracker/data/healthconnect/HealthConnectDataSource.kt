@@ -72,10 +72,17 @@ class HealthConnectDataSource(private val client: HealthConnectClient) : HealthD
             allRecords.addAll(response.records)
             pageToken = response.pageToken?.ifEmpty { null }
         } while (pageToken != null)
-        return allRecords
+        // On some devices, the phone's own built-in step/activity sensor also writes
+        // records into Health Connect (observed origin package
+        // "com.android.healthconnect.phone.*") alongside Fitbit's, covering overlapping
+        // time windows. Naively summing across all sources double-counts. This app is a
+        // Fitbit companion, so only Fitbit's own records are relevant here.
+        return allRecords.filter { it.metadata.dataOrigin.packageName == FITBIT_PACKAGE_NAME }
     }
 
     companion object {
+        private const val FITBIT_PACKAGE_NAME = "com.fitbit.FitbitMobile"
+
         val REQUIRED_PERMISSIONS: Set<String> = setOf(
             HealthPermission.getReadPermission(HeartRateRecord::class),
             HealthPermission.getReadPermission(HeartRateVariabilityRmssdRecord::class),

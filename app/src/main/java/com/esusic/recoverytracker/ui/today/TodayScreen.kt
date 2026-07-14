@@ -1,5 +1,6 @@
 package com.esusic.recoverytracker.ui.today
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,13 +21,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.esusic.recoverytracker.ui.detail.MetricType
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit) {
+fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit, onMetricClick: (MetricType) -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
     val pullRefreshState = rememberPullRefreshState(uiState.isRefreshing, { viewModel.refresh() })
 
@@ -78,9 +80,18 @@ fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit) {
         }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("RHR: ${uiState.restingHeartRate ?: "--"}")
-            Text("HRV: ${uiState.avgHrvMillis?.let { "%.0f".format(it) } ?: "--"}")
-            Text("Steps: ${uiState.steps ?: "--"}")
+            Text(
+                "RHR: ${uiState.restingHeartRate ?: "--"}",
+                modifier = Modifier.clickable { onMetricClick(MetricType.HEART_RATE) }
+            )
+            Text(
+                "HRV: ${uiState.avgHrvMillis?.let { "%.0f".format(it) } ?: "--"}",
+                modifier = Modifier.clickable { onMetricClick(MetricType.HRV) }
+            )
+            Text(
+                "Steps: ${uiState.steps ?: "--"}",
+                modifier = Modifier.clickable { onMetricClick(MetricType.ACTIVITY) }
+            )
         }
 
         uiState.lastSyncedAtEpochMillis?.let {

@@ -72,7 +72,11 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                         com.esusic.recoverytracker.ServiceLocator.healthDataSource
                     )
                 }
-                com.esusic.recoverytracker.ui.today.TodayScreen(viewModel) { navController.navigate("settings") }
+                com.esusic.recoverytracker.ui.today.TodayScreen(
+                    viewModel,
+                    onOpenSettings = { navController.navigate("settings") },
+                    onMetricClick = { metricType -> navController.navigate("detail/${metricType.name}") }
+                )
             }
             composable("trends") {
                 val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<com.esusic.recoverytracker.ui.trends.TrendsViewModel> {
@@ -87,7 +91,20 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                 com.esusic.recoverytracker.ui.sleep.SleepScreen(viewModel)
             }
             composable("settings") { Text("Settings placeholder") }
-            composable("detail/{metricType}") { Text("Detail placeholder") }
+            composable(
+                "detail/{metricType}",
+                arguments = listOf(androidx.navigation.navArgument("metricType") { type = androidx.navigation.NavType.StringType })
+            ) { backStackEntry ->
+                val metricType = com.esusic.recoverytracker.ui.detail.MetricType.valueOf(
+                    backStackEntry.arguments?.getString("metricType") ?: com.esusic.recoverytracker.ui.detail.MetricType.HEART_RATE.name
+                )
+                val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<com.esusic.recoverytracker.ui.detail.MetricDetailViewModel>(
+                    key = metricType.name
+                ) {
+                    com.esusic.recoverytracker.ui.detail.MetricDetailViewModel(com.esusic.recoverytracker.ServiceLocator.repository, metricType)
+                }
+                com.esusic.recoverytracker.ui.detail.MetricDetailScreen(viewModel, metricType)
+            }
         }
     }
 }

@@ -28,6 +28,21 @@ fun SleepScreen(viewModel: SleepViewModel) {
             return@Column
         }
 
+        val sessionStart = uiState.sessionStart
+        val sessionEnd = uiState.sessionEnd
+        if (sessionStart != null && sessionEnd != null && uiState.heartRateBuckets.isNotEmpty()) {
+            SleepHeartRateChart(
+                buckets = uiState.heartRateBuckets,
+                sessionStart = sessionStart,
+                sessionEnd = sessionEnd
+            )
+            SleepStageTimelineBar(
+                stagePeriods = uiState.stagePeriods,
+                sessionStart = sessionStart,
+                sessionEnd = sessionEnd
+            )
+        }
+
         Text("${uiState.totalMinutes!! / 60}h ${uiState.totalMinutes!! % 60}m total", style = MaterialTheme.typography.headlineSmall)
 
         uiState.typicalTotalMinutes?.let {

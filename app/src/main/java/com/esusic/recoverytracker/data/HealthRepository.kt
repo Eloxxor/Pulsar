@@ -9,6 +9,7 @@ import com.esusic.recoverytracker.data.prefs.UserPreferencesRepository
 import com.esusic.recoverytracker.model.StrainScore
 import com.esusic.recoverytracker.scoring.BaselineCalculator
 import com.esusic.recoverytracker.scoring.RecoveryScoreCalculator
+import com.esusic.recoverytracker.scoring.SleepPerformanceCalculator
 import com.esusic.recoverytracker.scoring.StrainScoreCalculator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -61,6 +62,18 @@ class HealthRepository(
             priorDayStrain = priorDayStrain
         )
 
+        val recentActualSleepMinutes = history.mapNotNull { it.sleepDurationMinutes }
+        val sleepDebtMinutes = SleepPerformanceCalculator.calculateSleepDebtMinutes(
+            typicalSleepMinutes,
+            recentActualSleepMinutes
+        )
+        val sleepPerformance = SleepPerformanceCalculator.calculate(
+            actualSleepMinutes = aggregate.sleep?.durationMinutes,
+            typicalSleepMinutes = typicalSleepMinutes,
+            priorDayStrain = priorDayStrain,
+            accumulatedDebtMinutes = sleepDebtMinutes
+        )
+
         val entity = DailyScoreEntity(
             date = date.toString(),
             recoveryValue = recovery.value,
@@ -70,7 +83,8 @@ class HealthRepository(
             sleepSubScore = recovery.sleepSubScore,
             strainValue = strain.value,
             lastSyncedAtEpochMillis = clock.millis(),
-            isComplete = aggregate.isComplete
+            isComplete = aggregate.isComplete,
+            sleepPerformance = sleepPerformance
         )
         scoreDao.upsert(entity)
         return entity

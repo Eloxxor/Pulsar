@@ -108,4 +108,15 @@ class HealthRepositoryTest {
         val result = repository.syncToday()
         assertEquals(LocalDate.now(fixedClock).toString(), result.date)
     }
+
+    @Test
+    fun `syncDate computes and persists sleepPerformance for a day with a sleep session`() = runTest {
+        val dayStart = date.atStartOfDay(ZoneOffset.UTC).toInstant()
+        val source = FakeHealthDataSource(
+            heartRate = listOf(HeartRateSample(dayStart.plusSeconds(60), 70L)),
+            sleep = listOf(SleepSession(dayStart, dayStart.plusSeconds(8 * 3600), emptyList()))
+        )
+        val result = repositoryWith(source).syncDate(date)
+        assertTrue(result.sleepPerformance != null)
+    }
 }

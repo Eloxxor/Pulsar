@@ -22,7 +22,9 @@ object ServiceLocator {
     }
 
     val database: AppDatabase by lazy {
-        Room.databaseBuilder(appContext, AppDatabase::class.java, "recovery_tracker.db").build()
+        Room.databaseBuilder(appContext, AppDatabase::class.java, "recovery_tracker.db")
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     val userPreferencesRepository: UserPreferencesRepository by lazy {

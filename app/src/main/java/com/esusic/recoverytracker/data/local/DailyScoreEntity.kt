@@ -17,7 +17,8 @@ data class DailyScoreEntity(
     val sleepSubScore: Double,
     val strainValue: Double,
     val lastSyncedAtEpochMillis: Long,
-    val isComplete: Boolean
+    val isComplete: Boolean,
+    val sleepPerformance: Int? = null
 )
 
 @Dao

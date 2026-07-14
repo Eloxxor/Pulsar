@@ -21,3 +21,9 @@ data class SleepSession(val start: Instant, val end: Instant, val stages: List<S
 }
 
 data class ExerciseSession(val start: Instant, val end: Instant, val exerciseType: Int)
+
+data class RespiratoryRateSample(val time: Instant, val breathsPerMinute: Double)
+
+data class OxygenSaturationSample(val time: Instant, val percentage: Double)
+
+data class SkinTemperatureDeltaSample(val time: Instant, val deltaCelsius: Double)

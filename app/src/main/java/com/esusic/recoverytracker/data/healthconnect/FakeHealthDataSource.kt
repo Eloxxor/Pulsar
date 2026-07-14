@@ -3,7 +3,10 @@ package com.esusic.recoverytracker.data.healthconnect
 import com.esusic.recoverytracker.model.ExerciseSession
 import com.esusic.recoverytracker.model.HeartRateSample
 import com.esusic.recoverytracker.model.HrvSample
+import com.esusic.recoverytracker.model.OxygenSaturationSample
+import com.esusic.recoverytracker.model.RespiratoryRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
+import com.esusic.recoverytracker.model.SkinTemperatureDeltaSample
 import com.esusic.recoverytracker.model.SleepSession
 import java.time.Instant
 
@@ -15,6 +18,9 @@ class FakeHealthDataSource(
     private val steps: Int = 0,
     private val activeCalories: Double = 0.0,
     private val exercise: List<ExerciseSession> = emptyList(),
+    private val respiratoryRate: List<RespiratoryRateSample> = emptyList(),
+    private val oxygenSaturation: List<OxygenSaturationSample> = emptyList(),
+    private val skinTemperatureDeltas: List<SkinTemperatureDeltaSample> = emptyList(),
     private val permissionsGranted: Boolean = true
 ) : HealthDataSource {
     override suspend fun heartRateSamples(start: Instant, end: Instant) =
@@ -35,6 +41,15 @@ class FakeHealthDataSource(
 
     override suspend fun exerciseSessions(start: Instant, end: Instant) =
         exercise.filter { it.start >= start && it.start < end }
+
+    override suspend fun respiratoryRateSamples(start: Instant, end: Instant) =
+        respiratoryRate.filter { it.time >= start && it.time < end }
+
+    override suspend fun oxygenSaturationSamples(start: Instant, end: Instant) =
+        oxygenSaturation.filter { it.time >= start && it.time < end }
+
+    override suspend fun skinTemperatureDeltaSamples(start: Instant, end: Instant) =
+        skinTemperatureDeltas.filter { it.time >= start && it.time < end }
 
     override suspend fun hasAllPermissions() = permissionsGranted
 }

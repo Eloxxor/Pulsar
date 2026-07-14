@@ -24,7 +24,6 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -131,20 +130,8 @@ fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit, onMetricC
             Card(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    QuickStat(
-                        icon = Icons.Filled.Favorite,
-                        label = "RHR",
-                        value = uiState.restingHeartRate?.toString() ?: "--",
-                        onClick = { onMetricClick(MetricType.HEART_RATE) }
-                    )
-                    QuickStat(
-                        icon = Icons.Filled.MonitorHeart,
-                        label = "HRV",
-                        value = uiState.avgHrvMillis?.let { "%.0f".format(it) } ?: "--",
-                        onClick = { onMetricClick(MetricType.HRV) }
-                    )
                     QuickStat(
                         icon = Icons.AutoMirrored.Filled.DirectionsWalk,
                         label = "Steps",

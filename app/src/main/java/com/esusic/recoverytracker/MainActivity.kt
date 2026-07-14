@@ -5,13 +5,27 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.esusic.recoverytracker.ui.navigation.RecoveryTrackerNavHost
 import com.esusic.recoverytracker.ui.theme.RecoveryTrackerTheme
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Resolve the start destination synchronously (before first composition) so a returning,
+        // already-onboarded user goes straight to "today" with no onboarding flash and without
+        // re-triggering an immediate sync on every cold launch. Onboarding is considered complete
+        // once a birth year has been saved and Health Connect permissions are currently granted -
+        // the same condition OnboardingScreen's own completion LaunchedEffect already uses.
+        val startDestination = runBlocking {
+            val hasBirthYear = ServiceLocator.userPreferencesRepository.birthYear.first() != null
+            val onboardingComplete = hasBirthYear && ServiceLocator.healthDataSource.hasAllPermissions()
+            if (onboardingComplete) "today" else "onboarding"
+        }
+
         setContent {
             RecoveryTrackerTheme {
-                RecoveryTrackerNavHost(startDestination = "onboarding")
+                RecoveryTrackerNavHost(startDestination = startDestination)
             }
         }
     }

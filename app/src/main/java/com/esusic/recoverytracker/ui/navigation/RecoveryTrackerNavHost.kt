@@ -54,7 +54,17 @@ fun RecoveryTrackerNavHost(startDestination: String) {
         }
     ) { padding ->
         NavHost(navController = navController, startDestination = startDestination, modifier = androidx.compose.ui.Modifier.padding(padding)) {
-            composable("onboarding") { Text("Onboarding placeholder") }
+            composable("onboarding") {
+                val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<com.esusic.recoverytracker.ui.onboarding.OnboardingViewModel> {
+                    com.esusic.recoverytracker.ui.onboarding.OnboardingViewModel(
+                        com.esusic.recoverytracker.ServiceLocator.userPreferencesRepository,
+                        com.esusic.recoverytracker.ServiceLocator.healthDataSource
+                    )
+                }
+                com.esusic.recoverytracker.ui.onboarding.OnboardingScreen(viewModel) {
+                    navController.navigate("today") { popUpTo("onboarding") { inclusive = true } }
+                }
+            }
             composable("today") { Text("Today placeholder") }
             composable("trends") { Text("Trends placeholder") }
             composable("sleep") { Text("Sleep placeholder") }

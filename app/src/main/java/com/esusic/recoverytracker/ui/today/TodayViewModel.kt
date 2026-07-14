@@ -19,6 +19,11 @@ data class TodayUiState(
     val restingHeartRate: Long? = null,
     val avgHrvMillis: Double? = null,
     val steps: Int? = null,
+    val avgRespiratoryRate: Double? = null,
+    val avgOxygenSaturationPercent: Double? = null,
+    val avgSkinTemperatureDeltaCelsius: Double? = null,
+    val latestHeartRateBpm: Long? = null,
+    val latestHeartRateEpochMillis: Long? = null,
     val lastSyncedAtEpochMillis: Long? = null,
     val hasAllPermissions: Boolean = true,
     val isRefreshing: Boolean = false
@@ -58,6 +63,11 @@ class TodayViewModel(
                 restingHeartRate = aggregate?.restingHeartRate,
                 avgHrvMillis = aggregate?.avgHrvMillis,
                 steps = aggregate?.steps,
+                avgRespiratoryRate = aggregate?.avgRespiratoryRate,
+                avgOxygenSaturationPercent = aggregate?.avgOxygenSaturationPercent,
+                avgSkinTemperatureDeltaCelsius = aggregate?.avgSkinTemperatureDeltaCelsius,
+                latestHeartRateBpm = aggregate?.latestHeartRateBpm,
+                latestHeartRateEpochMillis = aggregate?.latestHeartRateEpochMillis,
                 lastSyncedAtEpochMillis = score.lastSyncedAtEpochMillis,
                 hasAllPermissions = true,
                 isRefreshing = false

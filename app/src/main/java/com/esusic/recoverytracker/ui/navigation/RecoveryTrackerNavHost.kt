@@ -80,7 +80,12 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                 }
                 com.esusic.recoverytracker.ui.trends.TrendsScreen(viewModel)
             }
-            composable("sleep") { Text("Sleep placeholder") }
+            composable("sleep") {
+                val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<com.esusic.recoverytracker.ui.sleep.SleepViewModel> {
+                    com.esusic.recoverytracker.ui.sleep.SleepViewModel(com.esusic.recoverytracker.ServiceLocator.repository)
+                }
+                com.esusic.recoverytracker.ui.sleep.SleepScreen(viewModel)
+            }
             composable("settings") { Text("Settings placeholder") }
             composable("detail/{metricType}") { Text("Detail placeholder") }
         }

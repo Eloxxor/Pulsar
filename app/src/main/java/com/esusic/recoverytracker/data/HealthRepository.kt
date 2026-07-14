@@ -6,6 +6,7 @@ import com.esusic.recoverytracker.data.local.DailyScoreDao
 import com.esusic.recoverytracker.data.local.DailyScoreEntity
 import com.esusic.recoverytracker.data.local.toEntity
 import com.esusic.recoverytracker.data.prefs.UserPreferencesRepository
+import com.esusic.recoverytracker.model.SleepDetail
 import com.esusic.recoverytracker.model.StrainScore
 import com.esusic.recoverytracker.scoring.BaselineCalculator
 import com.esusic.recoverytracker.scoring.RecoveryScoreCalculator
@@ -88,5 +89,12 @@ class HealthRepository(
         )
         scoreDao.upsert(entity)
         return entity
+    }
+
+    suspend fun sleepDetailForDate(date: LocalDate): SleepDetail? {
+        val aggregate = aggregationService.aggregateForDate(date)
+        val session = aggregate.sleep ?: return null
+        val heartRateSamples = aggregationService.heartRateSamplesForSession(session)
+        return SleepDetail(session, heartRateSamples)
     }
 }

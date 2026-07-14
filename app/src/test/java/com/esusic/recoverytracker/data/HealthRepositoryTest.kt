@@ -20,6 +20,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -118,5 +119,24 @@ class HealthRepositoryTest {
         )
         val result = repositoryWith(source).syncDate(date)
         assertTrue(result.sleepPerformance != null)
+    }
+
+    @Test
+    fun `sleepDetailForDate returns null when there is no sleep session`() = runTest {
+        val result = repositoryWith(FakeHealthDataSource()).sleepDetailForDate(date)
+        assertNull(result)
+    }
+
+    @Test
+    fun `sleepDetailForDate returns the session and its heart rate samples when sleep exists`() = runTest {
+        val dayStart = date.atStartOfDay(ZoneOffset.UTC).toInstant()
+        val session = SleepSession(dayStart, dayStart.plusSeconds(6 * 3600), emptyList())
+        val hrSample = HeartRateSample(dayStart.plusSeconds(60), 55L)
+        val source = FakeHealthDataSource(sleep = listOf(session), heartRate = listOf(hrSample))
+
+        val result = repositoryWith(source).sleepDetailForDate(date)
+
+        assertEquals(session, result?.session)
+        assertEquals(listOf(hrSample), result?.heartRateSamples)
     }
 }

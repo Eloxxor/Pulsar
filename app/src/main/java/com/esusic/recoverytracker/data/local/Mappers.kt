@@ -15,7 +15,12 @@ fun DailyAggregate.toEntity(): DailyAggregateEntity = DailyAggregateEntity(
     lightSleepMinutes = sleep?.minutesIn(SleepStageType.LIGHT),
     steps = steps,
     activeCaloriesKcal = activeCaloriesKcal,
-    isComplete = isComplete
+    isComplete = isComplete,
+    avgRespiratoryRate = avgRespiratoryRate,
+    avgOxygenSaturationPercent = avgOxygenSaturationPercent,
+    avgSkinTemperatureDeltaCelsius = avgSkinTemperatureDeltaCelsius,
+    latestHeartRateBpm = latestHeartRateSample?.bpm,
+    latestHeartRateEpochMillis = latestHeartRateSample?.time?.toEpochMilli()
 )
 
 fun DailyScoreEntity.toRecoveryScore(): RecoveryScore = RecoveryScore(

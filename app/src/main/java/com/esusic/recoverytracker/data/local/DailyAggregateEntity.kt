@@ -18,7 +18,12 @@ data class DailyAggregateEntity(
     val lightSleepMinutes: Long?,
     val steps: Int,
     val activeCaloriesKcal: Double,
-    val isComplete: Boolean
+    val isComplete: Boolean,
+    val avgRespiratoryRate: Double? = null,
+    val avgOxygenSaturationPercent: Double? = null,
+    val avgSkinTemperatureDeltaCelsius: Double? = null,
+    val latestHeartRateBpm: Long? = null,
+    val latestHeartRateEpochMillis: Long? = null
 )
 
 @Dao

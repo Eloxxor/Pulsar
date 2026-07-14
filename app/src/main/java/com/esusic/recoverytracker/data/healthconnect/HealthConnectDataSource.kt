@@ -51,13 +51,24 @@ class HealthConnectDataSource(private val client: HealthConnectClient) : HealthD
         val allRecords = mutableListOf<T>()
         var pageToken: String? = null
         do {
-            val response = client.readRecords(
+            // The pageToken parameter must be omitted (not passed as "") on the first
+            // request: Kotlin's generated $default constructor takes a different code
+            // path than explicitly passing the same "" default value, and at least one
+            // real Health Connect implementation (the Android 14+ system module) throws
+            // NumberFormatException trying to parse an explicitly-passed "" as a page
+            // token. Only pass pageToken once we have a real, non-empty token from a
+            // prior response.
+            val currentToken = pageToken
+            val request = if (currentToken == null) {
+                ReadRecordsRequest(recordType = T::class, timeRangeFilter = TimeRangeFilter.between(start, end))
+            } else {
                 ReadRecordsRequest(
                     recordType = T::class,
                     timeRangeFilter = TimeRangeFilter.between(start, end),
-                    pageToken = pageToken ?: ""
+                    pageToken = currentToken
                 )
-            )
+            }
+            val response = client.readRecords(request)
             allRecords.addAll(response.records)
             pageToken = response.pageToken?.ifEmpty { null }
         } while (pageToken != null)

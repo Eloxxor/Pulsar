@@ -13,10 +13,12 @@ private val DangerRed = Color(0xFFE8503D)
 private val NearBlackBackground = Color(0xFF0A0A0A)
 private val CardSurface = Color(0xFF161616)
 private val CardSurfaceVariant = Color(0xFF1F1F1F)
+private val SleepViolet = Color(0xFF9B6BFF)
 
 private val DarkColors = darkColorScheme(
     primary = RecoveryGreen,
     secondary = StrainBlue,
+    tertiary = SleepViolet,
     error = DangerRed,
     background = NearBlackBackground,
     surface = CardSurface,

@@ -64,13 +64,29 @@ fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit, onMetricC
                 }
             }
 
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CircularGauge(
+                    value = (uiState.sleepPerformance ?: 0).toFloat(),
+                    maxValue = 100f,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(90.dp)
+                ) {
+                    Text(
+                        text = uiState.sleepPerformance?.toString() ?: "--",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+
                 CircularGauge(
                     value = (uiState.recoveryValue ?: 0).toFloat(),
                     maxValue = 100f,
                     color = recoveryColor(uiState.recoveryValue),
                     isIndeterminate = uiState.isCalibrating,
-                    modifier = Modifier.size(200.dp).padding(vertical = 16.dp)
+                    modifier = Modifier.size(140.dp)
                 ) {
                     Text(
                         text = when {
@@ -78,22 +94,20 @@ fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit, onMetricC
                             uiState.recoveryValue != null -> "${uiState.recoveryValue}"
                             else -> "--"
                         },
-                        style = MaterialTheme.typography.displayMedium,
+                        style = if (uiState.isCalibrating) MaterialTheme.typography.bodySmall else MaterialTheme.typography.headlineMedium,
                         textAlign = TextAlign.Center
                     )
                 }
-            }
 
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CircularGauge(
                     value = (uiState.strainValue ?: 0.0).toFloat(),
                     maxValue = 21f,
                     color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(110.dp).padding(vertical = 8.dp)
+                    modifier = Modifier.size(90.dp)
                 ) {
                     Text(
                         text = uiState.strainValue?.let { "%.1f".format(it) } ?: "--",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
             }

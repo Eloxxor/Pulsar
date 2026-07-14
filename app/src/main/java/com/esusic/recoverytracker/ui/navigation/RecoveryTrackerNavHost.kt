@@ -65,7 +65,15 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                     navController.navigate("today") { popUpTo("onboarding") { inclusive = true } }
                 }
             }
-            composable("today") { Text("Today placeholder") }
+            composable("today") {
+                val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<com.esusic.recoverytracker.ui.today.TodayViewModel> {
+                    com.esusic.recoverytracker.ui.today.TodayViewModel(
+                        com.esusic.recoverytracker.ServiceLocator.repository,
+                        com.esusic.recoverytracker.ServiceLocator.healthDataSource
+                    )
+                }
+                com.esusic.recoverytracker.ui.today.TodayScreen(viewModel) { navController.navigate("settings") }
+            }
             composable("trends") { Text("Trends placeholder") }
             composable("sleep") { Text("Sleep placeholder") }
             composable("settings") { Text("Settings placeholder") }

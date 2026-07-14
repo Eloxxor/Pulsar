@@ -25,10 +25,20 @@ class AggregationService(private val dataSource: HealthDataSource) {
         val steps = dataSource.totalSteps(start, end)
         val activeCalories = dataSource.totalActiveCalories(start, end)
         val exerciseSessions = dataSource.exerciseSessions(start, end)
+        val respiratoryRateSamples = dataSource.respiratoryRateSamples(start, end)
+        val oxygenSaturationSamples = dataSource.oxygenSaturationSamples(start, end)
+        val skinTemperatureDeltaSamples = dataSource.skinTemperatureDeltaSamples(start, end)
 
         val avgHrv = hrvSamples.takeIf { it.isNotEmpty() }?.map { it.rmssdMillis }?.average()
         val restingHeartRate = restingHrSamples.minByOrNull { it.bpm }?.bpm
         val isComplete = heartRateSamples.isNotEmpty() && sleep != null
+        val avgRespiratoryRate = respiratoryRateSamples.takeIf { it.isNotEmpty() }
+            ?.map { it.breathsPerMinute }?.average()
+        val avgOxygenSaturationPercent = oxygenSaturationSamples.takeIf { it.isNotEmpty() }
+            ?.map { it.percentage }?.average()
+        val avgSkinTemperatureDeltaCelsius = skinTemperatureDeltaSamples.takeIf { it.isNotEmpty() }
+            ?.map { it.deltaCelsius }?.average()
+        val latestHeartRateSample = heartRateSamples.maxByOrNull { it.time }
 
         return DailyAggregate(
             date = date,
@@ -39,7 +49,11 @@ class AggregationService(private val dataSource: HealthDataSource) {
             activeCaloriesKcal = activeCalories,
             heartRateSamples = heartRateSamples,
             exerciseSessions = exerciseSessions,
-            isComplete = isComplete
+            isComplete = isComplete,
+            avgRespiratoryRate = avgRespiratoryRate,
+            avgOxygenSaturationPercent = avgOxygenSaturationPercent,
+            avgSkinTemperatureDeltaCelsius = avgSkinTemperatureDeltaCelsius,
+            latestHeartRateSample = latestHeartRateSample
         )
     }
 }

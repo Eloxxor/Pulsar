@@ -3,7 +3,10 @@ package com.esusic.recoverytracker.data
 import com.esusic.recoverytracker.data.healthconnect.FakeHealthDataSource
 import com.esusic.recoverytracker.model.HeartRateSample
 import com.esusic.recoverytracker.model.HrvSample
+import com.esusic.recoverytracker.model.OxygenSaturationSample
+import com.esusic.recoverytracker.model.RespiratoryRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
+import com.esusic.recoverytracker.model.SkinTemperatureDeltaSample
 import com.esusic.recoverytracker.model.SleepSession
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -85,5 +88,56 @@ class AggregationServiceTest {
 
         assertTrue(complete.isComplete)
         assertTrue(!incomplete.isComplete)
+    }
+
+    @Test
+    fun `averages respiratory rate samples within the day`() = runTest {
+        val source = FakeHealthDataSource(
+            respiratoryRate = listOf(
+                RespiratoryRateSample(dayStart.plusSeconds(3600), 12.0),
+                RespiratoryRateSample(dayStart.plusSeconds(7200), 16.0)
+            )
+        )
+        val result = AggregationService(source).aggregateForDate(date, zone)
+        assertEquals(14.0, result.avgRespiratoryRate!!, 0.0001)
+    }
+
+    @Test
+    fun `avgRespiratoryRate is null when no respiratory rate samples exist`() = runTest {
+        val result = AggregationService(FakeHealthDataSource()).aggregateForDate(date, zone)
+        assertNull(result.avgRespiratoryRate)
+    }
+
+    @Test
+    fun `averages oxygen saturation samples within the day`() = runTest {
+        val source = FakeHealthDataSource(
+            oxygenSaturation = listOf(
+                OxygenSaturationSample(dayStart.plusSeconds(3600), 96.0),
+                OxygenSaturationSample(dayStart.plusSeconds(7200), 98.0)
+            )
+        )
+        val result = AggregationService(source).aggregateForDate(date, zone)
+        assertEquals(97.0, result.avgOxygenSaturationPercent!!, 0.0001)
+    }
+
+    @Test
+    fun `averages skin temperature delta samples within the day`() = runTest {
+        val source = FakeHealthDataSource(
+            skinTemperatureDeltas = listOf(
+                SkinTemperatureDeltaSample(dayStart.plusSeconds(3600), -0.4),
+                SkinTemperatureDeltaSample(dayStart.plusSeconds(7200), 0.2)
+            )
+        )
+        val result = AggregationService(source).aggregateForDate(date, zone)
+        assertEquals(-0.1, result.avgSkinTemperatureDeltaCelsius!!, 0.0001)
+    }
+
+    @Test
+    fun `latestHeartRateSample picks the most recent heart rate sample of the day`() = runTest {
+        val earlier = HeartRateSample(dayStart.plusSeconds(3600), 65L)
+        val later = HeartRateSample(dayStart.plusSeconds(7200), 72L)
+        val source = FakeHealthDataSource(heartRate = listOf(earlier, later))
+        val result = AggregationService(source).aggregateForDate(date, zone)
+        assertEquals(later, result.latestHeartRateSample)
     }
 }

@@ -11,5 +11,9 @@ data class DailyAggregate(
     val activeCaloriesKcal: Double,
     val heartRateSamples: List<HeartRateSample>,
     val exerciseSessions: List<ExerciseSession>,
-    val isComplete: Boolean
+    val isComplete: Boolean,
+    val avgRespiratoryRate: Double? = null,
+    val avgOxygenSaturationPercent: Double? = null,
+    val avgSkinTemperatureDeltaCelsius: Double? = null,
+    val latestHeartRateSample: HeartRateSample? = null
 )

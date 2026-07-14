@@ -90,7 +90,9 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                 }
                 com.esusic.recoverytracker.ui.sleep.SleepScreen(viewModel)
             }
-            composable("settings") { Text("Settings placeholder") }
+            composable("settings") {
+                com.esusic.recoverytracker.ui.settings.SettingsScreen { navController.popBackStack() }
+            }
             composable(
                 "detail/{metricType}",
                 arguments = listOf(androidx.navigation.navArgument("metricType") { type = androidx.navigation.NavType.StringType })

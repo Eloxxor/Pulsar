@@ -1,11 +1,5 @@
 package com.esusic.recoverytracker.ui.today
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +17,6 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -34,7 +27,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
@@ -179,19 +171,6 @@ private fun HealthMonitorCard(uiState: TodayUiState) {
                 "Skin Temp Variation",
                 uiState.avgSkinTemperatureDeltaCelsius?.let { "%+.1f°C".format(it) } ?: "--"
             )
-
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PulsingHeartIcon()
-                val heartRateText = uiState.latestHeartRateBpm?.let { bpm ->
-                    val timestamp = uiState.latestHeartRateEpochMillis?.let {
-                        DateTimeFormatter.ofPattern("HH:mm")
-                            .withZone(ZoneId.systemDefault())
-                            .format(Instant.ofEpochMilli(it))
-                    }
-                    if (timestamp != null) "$bpm bpm (as of $timestamp)" else "$bpm bpm"
-                } ?: "--"
-                Text(heartRateText, style = MaterialTheme.typography.bodyMedium)
-            }
         }
     }
 }
@@ -202,26 +181,6 @@ private fun VitalRow(label: String, value: String) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
         Text(value, style = MaterialTheme.typography.bodyMedium)
     }
-}
-
-@Composable
-private fun PulsingHeartIcon() {
-    val infiniteTransition = rememberInfiniteTransition(label = "heartbeat")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "heartbeatScale"
-    )
-    Icon(
-        Icons.Filled.Favorite,
-        contentDescription = "Heart rate",
-        tint = MaterialTheme.colorScheme.error,
-        modifier = Modifier.size(20.dp).scale(scale)
-    )
 }
 
 @Composable

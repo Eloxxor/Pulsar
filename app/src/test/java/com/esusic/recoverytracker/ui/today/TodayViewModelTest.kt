@@ -9,7 +9,9 @@ import com.esusic.recoverytracker.data.HealthRepository
 import com.esusic.recoverytracker.data.healthconnect.FakeHealthDataSource
 import com.esusic.recoverytracker.data.local.AppDatabase
 import com.esusic.recoverytracker.data.prefs.UserPreferencesRepository
+import com.esusic.recoverytracker.model.DeltaKind
 import com.esusic.recoverytracker.model.HeartRateSample
+import com.esusic.recoverytracker.model.RestingHrSample
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -19,6 +21,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -28,6 +31,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.concurrent.Executor
 
 @RunWith(RobolectricTestRunner::class)
@@ -77,6 +82,27 @@ class TodayViewModelTest {
         assertTrue(viewModel.uiState.value.recoveryValue != null)
         assertEquals(true, viewModel.uiState.value.hasAllPermissions)
         assertEquals(false, viewModel.uiState.value.isRefreshing)
+    }
+
+    @Test
+    fun `refresh computes vitals deltas against the prior-days baseline`() = runTest {
+        val yesterday = LocalDate.now().minusDays(1)
+        val today = LocalDate.now()
+        val source = FakeHealthDataSource(
+            restingHr = listOf(
+                RestingHrSample(yesterday.atStartOfDay(ZoneOffset.UTC).toInstant().plusSeconds(60), 50L),
+                RestingHrSample(today.atStartOfDay(ZoneOffset.UTC).toInstant().plusSeconds(60), 46L)
+            )
+        )
+        val repository = repositoryWith(source)
+        repository.syncDate(yesterday)
+
+        val viewModel = TodayViewModel(repository, source)
+        viewModel.refresh()
+
+        assertEquals(DeltaKind.BETTER, viewModel.uiState.value.rhrDelta!!.kind)
+        assertEquals(-4.0, viewModel.uiState.value.rhrDelta!!.diff, 0.0001)
+        assertNotNull(viewModel.uiState.value.hrvSubScore)
     }
 
     @Test

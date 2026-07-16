@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.esusic.recoverytracker.data.HealthRepository
 import com.esusic.recoverytracker.data.healthconnect.HealthDataSource
+import com.esusic.recoverytracker.model.MetricDelta
+import com.esusic.recoverytracker.model.metricDelta
+import com.esusic.recoverytracker.scoring.BaselineCalculator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,7 +29,16 @@ data class TodayUiState(
     val latestHeartRateEpochMillis: Long? = null,
     val lastSyncedAtEpochMillis: Long? = null,
     val hasAllPermissions: Boolean = true,
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
+    val hrvSubScore: Double? = null,
+    val rhrSubScore: Double? = null,
+    val sleepSubScore: Double? = null,
+    val rhrDelta: MetricDelta? = null,
+    val hrvDelta: MetricDelta? = null,
+    val respRateDelta: MetricDelta? = null,
+    val spo2Delta: MetricDelta? = null,
+    val skinTempDelta: MetricDelta? = null,
+    val sleepDelta: MetricDelta? = null
 )
 
 class TodayViewModel(
@@ -52,7 +64,19 @@ class TodayViewModel(
             }
 
             val score = repository.syncToday()
-            val aggregate = repository.observeRecentAggregates(1).first().firstOrNull()
+            val aggregates = repository.observeRecentAggregates(BaselineCalculator.WINDOW_DAYS + 1).first()
+            val aggregate = aggregates.firstOrNull()
+            val history = aggregates.drop(1)
+
+            fun baselineMean(values: List<Double>): Double? =
+                BaselineCalculator.calculate(values).takeIf { it.sampleCount > 0 }?.mean
+
+            val rhrBaseline = baselineMean(history.mapNotNull { it.restingHeartRate?.toDouble() })
+            val hrvBaseline = baselineMean(history.mapNotNull { it.avgHrvMillis })
+            val respBaseline = baselineMean(history.mapNotNull { it.avgRespiratoryRate })
+            val spo2Baseline = baselineMean(history.mapNotNull { it.avgOxygenSaturationPercent })
+            val skinTempBaseline = baselineMean(history.mapNotNull { it.avgSkinTemperatureDeltaCelsius })
+            val sleepBaseline = baselineMean(history.mapNotNull { it.sleepDurationMinutes?.toDouble() })
 
             _uiState.value = TodayUiState(
                 recoveryValue = score.recoveryValue,
@@ -70,7 +94,16 @@ class TodayViewModel(
                 latestHeartRateEpochMillis = aggregate?.latestHeartRateEpochMillis,
                 lastSyncedAtEpochMillis = score.lastSyncedAtEpochMillis,
                 hasAllPermissions = true,
-                isRefreshing = false
+                isRefreshing = false,
+                hrvSubScore = score.hrvSubScore,
+                rhrSubScore = score.rhrSubScore,
+                sleepSubScore = score.sleepSubScore,
+                rhrDelta = metricDelta(aggregate?.restingHeartRate?.toDouble(), rhrBaseline, higherIsBetter = false),
+                hrvDelta = metricDelta(aggregate?.avgHrvMillis, hrvBaseline, higherIsBetter = true),
+                respRateDelta = metricDelta(aggregate?.avgRespiratoryRate, respBaseline, higherIsBetter = null),
+                spo2Delta = metricDelta(aggregate?.avgOxygenSaturationPercent, spo2Baseline, higherIsBetter = true, neutralBandFraction = 0.01),
+                skinTempDelta = metricDelta(aggregate?.avgSkinTemperatureDeltaCelsius, skinTempBaseline, higherIsBetter = null),
+                sleepDelta = metricDelta(aggregate?.sleepDurationMinutes?.toDouble(), sleepBaseline, higherIsBetter = true, neutralBandFraction = 0.05)
             )
         }
     }

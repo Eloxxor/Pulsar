@@ -9,6 +9,7 @@ import com.esusic.recoverytracker.data.HealthRepository
 import com.esusic.recoverytracker.data.healthconnect.FakeHealthDataSource
 import com.esusic.recoverytracker.data.local.AppDatabase
 import com.esusic.recoverytracker.data.prefs.UserPreferencesRepository
+import com.esusic.recoverytracker.model.DeltaKind
 import com.esusic.recoverytracker.model.SleepSession
 import com.esusic.recoverytracker.model.SleepStagePeriod
 import com.esusic.recoverytracker.model.SleepStageType
@@ -83,5 +84,36 @@ class SleepViewModelTest {
 
         assertEquals(400L, viewModel.uiState.value.totalMinutes)
         assertEquals(80L, viewModel.uiState.value.deepMinutes)
+    }
+
+    @Test
+    fun `durationDelta compares the latest night against prior nights only`() = runTest {
+        val synchronousExecutor = Executor { it.run() }
+        val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java)
+            .setQueryExecutor(synchronousExecutor)
+            .setTransactionExecutor(synchronousExecutor)
+            .allowMainThreadQueries().build()
+        val userPreferences = UserPreferencesRepository(
+            PreferenceDataStoreFactory.create(scope = CoroutineScope(UnconfinedTestDispatcher())) {
+                tempFolder.newFile("test2.preferences_pb")
+            }
+        )
+        val night1Start = Instant.parse("2026-07-12T00:00:00Z")
+        val night2Start = Instant.parse("2026-07-13T00:00:00Z")
+        val source = FakeHealthDataSource(
+            sleep = listOf(
+                SleepSession(night1Start, night1Start.plus(400, ChronoUnit.MINUTES), emptyList()),
+                SleepSession(night2Start, night2Start.plus(460, ChronoUnit.MINUTES), emptyList())
+            )
+        )
+        val repository = HealthRepository(AggregationService(source), db.dailyScoreDao(), db.dailyAggregateDao(), userPreferences)
+        repository.syncDate(LocalDate.of(2026, 7, 12))
+        repository.syncDate(LocalDate.of(2026, 7, 13))
+
+        val viewModel = SleepViewModel(repository)
+        viewModel.uiState.filter { it.durationDelta != null }.first()
+
+        assertEquals(60.0, viewModel.uiState.value.durationDelta!!.diff, 0.0001)
+        assertEquals(DeltaKind.BETTER, viewModel.uiState.value.durationDelta!!.kind)
     }
 }

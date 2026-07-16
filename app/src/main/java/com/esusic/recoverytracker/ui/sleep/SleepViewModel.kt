@@ -3,7 +3,9 @@ package com.esusic.recoverytracker.ui.sleep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.esusic.recoverytracker.data.HealthRepository
+import com.esusic.recoverytracker.model.MetricDelta
 import com.esusic.recoverytracker.model.SleepStagePeriod
+import com.esusic.recoverytracker.model.metricDelta
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +22,7 @@ data class SleepUiState(
     val remPercent: Float = 0f,
     val lightPercent: Float = 0f,
     val typicalTotalMinutes: Double? = null,
+    val durationDelta: MetricDelta? = null,
     val heartRateBuckets: List<HeartRateBucket> = emptyList(),
     val stagePeriods: List<SleepStagePeriod> = emptyList(),
     val sessionStart: Instant? = null,
@@ -34,9 +37,11 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
     init {
         viewModelScope.launch {
             repository.observeRecentAggregates(30).collect { aggregates ->
-                val latest = aggregates.firstOrNull { it.sleepDurationMinutes != null }
-                val history = aggregates.mapNotNull { it.sleepDurationMinutes }
-                val typical = if (history.isEmpty()) null else history.average()
+                val latestIndex = aggregates.indexOfFirst { it.sleepDurationMinutes != null }
+                val latest = if (latestIndex >= 0) aggregates[latestIndex] else null
+                val priorNights = if (latestIndex >= 0) aggregates.drop(latestIndex + 1) else aggregates
+                val history = priorNights.mapNotNull { it.sleepDurationMinutes }
+                val typical = if (history.isEmpty()) null else history.map { it.toDouble() }.average()
 
                 if (latest?.sleepDurationMinutes == null || latest.sleepDurationMinutes <= 0) {
                     _uiState.value = _uiState.value.copy(
@@ -47,7 +52,8 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
                         deepPercent = 0f,
                         remPercent = 0f,
                         lightPercent = 0f,
-                        typicalTotalMinutes = typical
+                        typicalTotalMinutes = typical,
+                        durationDelta = null
                     )
                 } else {
                     val total = latest.sleepDurationMinutes
@@ -62,7 +68,13 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
                         deepPercent = deep.toFloat() / total,
                         remPercent = rem.toFloat() / total,
                         lightPercent = light.toFloat() / total,
-                        typicalTotalMinutes = typical
+                        typicalTotalMinutes = typical,
+                        durationDelta = metricDelta(
+                            total.toDouble(),
+                            typical,
+                            higherIsBetter = true,
+                            neutralBandFraction = 0.05
+                        )
                     )
                 }
             }

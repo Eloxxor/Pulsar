@@ -5,15 +5,17 @@ import androidx.lifecycle.viewModelScope
 import com.esusic.recoverytracker.data.HealthRepository
 import com.esusic.recoverytracker.data.local.DailyAggregateEntity
 import com.esusic.recoverytracker.scoring.BaselineCalculator
+import com.esusic.recoverytracker.ui.common.ChartPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 data class MetricDetailUiState(
     val todayValue: Double? = null,
     val baselineMean: Double? = null,
-    val history: List<Float> = emptyList()
+    val history: List<ChartPoint> = emptyList()
 )
 
 class MetricDetailViewModel(
@@ -28,14 +30,16 @@ class MetricDetailViewModel(
         viewModelScope.launch {
             repository.observeRecentAggregates(BaselineCalculator.WINDOW_DAYS).collect { aggregates ->
                 val chronological = aggregates.reversed()
-                val values = chronological.mapNotNull { valueFor(it) }
+                val points = chronological.mapNotNull { entity ->
+                    valueFor(entity)?.let { ChartPoint(LocalDate.parse(entity.date), it.toFloat()) }
+                }
                 val today = chronological.lastOrNull()?.let { valueFor(it) }
-                val baseline = BaselineCalculator.calculate(values.dropLast(1))
+                val baseline = BaselineCalculator.calculate(points.dropLast(1).map { it.value.toDouble() })
 
                 _uiState.value = MetricDetailUiState(
                     todayValue = today,
                     baselineMean = baseline.mean.takeIf { baseline.sampleCount > 0 },
-                    history = values.map { it.toFloat() }
+                    history = points
                 )
             }
         }

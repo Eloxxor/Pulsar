@@ -35,7 +35,7 @@ fun RecoveryTrackerNavHost(startDestination: String) {
         bottomBar = {
             val backStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = backStackEntry?.destination
-            NavigationBar {
+            NavigationBar(containerColor = com.esusic.recoverytracker.ui.theme.AppColors.NavBar) {
                 bottomTabs.forEach { tab ->
                     NavigationBarItem(
                         selected = currentRoute?.hierarchy?.any { it.route == tab.route } == true,
@@ -47,7 +47,14 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                             }
                         },
                         icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        label = { Text(tab.label) }
+                        label = { Text(tab.label) },
+                        colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                            indicatorColor = androidx.compose.ui.graphics.Color(0xFF1E1E26),
+                            selectedIconColor = com.esusic.recoverytracker.ui.theme.AppColors.TextPrimary,
+                            selectedTextColor = com.esusic.recoverytracker.ui.theme.AppColors.TextPrimary,
+                            unselectedIconColor = com.esusic.recoverytracker.ui.theme.AppColors.TextMuted,
+                            unselectedTextColor = com.esusic.recoverytracker.ui.theme.AppColors.TextMuted
+                        )
                     )
                 }
             }

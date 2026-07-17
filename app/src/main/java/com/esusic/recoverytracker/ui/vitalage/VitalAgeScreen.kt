@@ -94,6 +94,13 @@ private fun HeroSection(result: VitalAgeResult, uiState: VitalAgeUiState) {
         }
         Text(text, style = MaterialTheme.typography.titleSmall, color = color, fontWeight = FontWeight.SemiBold)
         DeltaChip(delta = uiState.weeklyDelta, unit = "yr", decimals = 1, suffix = "vs last week")
+        uiState.asOfDate?.let {
+            Text(
+                "As of ${it.format(DateTimeFormatter.ofPattern("d MMM"))} · updates every Monday",
+                style = MaterialTheme.typography.bodySmall,
+                color = AppColors.TextMuted
+            )
+        }
     }
 }
 

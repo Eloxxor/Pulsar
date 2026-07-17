@@ -101,24 +101,40 @@ class VitalAgeViewModelTest {
     }
 
     @Test
-    fun `computes vital age with history and weekly delta from persisted days`() = runTest {
+    fun `display value anchors to the previous Monday and history holds Mondays only`() = runTest {
         userPreferences.setBirthYear(1996)
-        // 12 consecutive days ending today; HRV improves over time
-        (11L downTo 0L).forEach { back ->
-            insertDay(today.minusDays(back), hrv = 40.0 + (11 - back), rhr = 60, sleepMin = 450, steps = 9000, strain = 9.0)
+        // 20 consecutive days ending Friday 2026-07-17; HRV improves daily
+        (19L downTo 0L).forEach { back ->
+            insertDay(today.minusDays(back), hrv = 40.0 + (19 - back), rhr = 60, sleepMin = 450, steps = 9000, strain = 9.0)
         }
         val viewModel = VitalAgeViewModel(repository, userPreferences, fixedClock)
         val state = viewModel.uiState.filter { !it.isLoading }.first()
 
         assertEquals(30, state.chronologicalAge)
-        assertNotNull(state.result)
-        // Series qualifies from day 3 onward = 10 points
-        assertEquals(10, state.history.size)
-        assertEquals(today, state.history.last().date)
+        val monday = LocalDate.of(2026, 7, 13)
+        assertEquals(monday, state.asOfDate)
+        // History: only Mondays inside the qualified series
+        assertEquals(listOf(LocalDate.of(2026, 7, 6), monday), state.history.map { it.date })
         assertNotNull(state.weeklyDelta)
         // HRV rising means vital age falls week-over-week
         assertEquals(DeltaKind.BETTER, state.weeklyDelta!!.kind)
+        // Displayed number equals the Monday value, not today's
+        assertEquals(state.history.last().value, state.result!!.vitalAge.toFloat(), 1e-4f)
         assertNull(state.daysUntilReady)
+    }
+
+    @Test
+    fun `before the first qualified Monday the latest point is shown as fallback`() = runTest {
+        userPreferences.setBirthYear(1996)
+        // Only Wed-Fri this week: no series point at or before Monday 2026-07-13
+        (2L downTo 0L).forEach { back ->
+            insertDay(today.minusDays(back), hrv = 45.0, rhr = 62, sleepMin = 430, steps = 7000, strain = 5.0)
+        }
+        val viewModel = VitalAgeViewModel(repository, userPreferences, fixedClock)
+        val state = viewModel.uiState.filter { !it.isLoading }.first()
+        assertNotNull(state.result)
+        assertEquals(today, state.asOfDate)
+        assertNull(state.weeklyDelta)
     }
 
     @Test

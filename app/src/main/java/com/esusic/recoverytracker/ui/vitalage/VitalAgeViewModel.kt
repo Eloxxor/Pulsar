@@ -16,7 +16,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 import kotlin.math.abs
 
 data class VitalAgeUiState(
@@ -25,7 +27,8 @@ data class VitalAgeUiState(
     val result: VitalAgeResult? = null,
     val weeklyDelta: MetricDelta? = null,
     val history: List<ChartPoint> = emptyList(),
-    val daysUntilReady: Int? = null
+    val daysUntilReady: Int? = null,
+    val asOfDate: LocalDate? = null
 )
 
 class VitalAgeViewModel(
@@ -64,10 +67,13 @@ class VitalAgeViewModel(
             }
 
             val series = VitalAgeSeries.build(days, birthYear)
-            val latest = series.lastOrNull()
-            val weekBefore = latest?.let { (date, _) -> series.find { it.first == date.minusDays(7) } }
-            val weeklyDelta = if (latest != null && weekBefore != null) {
-                val diff = latest.second.vitalAge - weekBefore.second.vitalAge
+            val anchor = LocalDate.now(clock).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            // The shown number only changes on Mondays; before the first qualified
+            // Monday fall back to the newest point so calibration still shows something.
+            val display = series.lastOrNull { it.first <= anchor } ?: series.lastOrNull()
+            val weekBefore = display?.let { (date, _) -> series.lastOrNull { it.first <= date.minusDays(7) } }
+            val weeklyDelta = if (display != null && weekBefore != null) {
+                val diff = display.second.vitalAge - weekBefore.second.vitalAge
                 MetricDelta(
                     diff,
                     when {
@@ -83,14 +89,16 @@ class VitalAgeViewModel(
             _uiState.value = VitalAgeUiState(
                 isLoading = false,
                 chronologicalAge = LocalDate.now(clock).year - birthYear,
-                result = latest?.second,
+                result = display?.second,
                 weeklyDelta = weeklyDelta,
-                history = series.map { (date, result) -> ChartPoint(date, result.vitalAge.toFloat()) },
-                daysUntilReady = if (latest == null) {
+                history = series.filter { it.first.dayOfWeek == DayOfWeek.MONDAY }
+                    .map { (date, result) -> ChartPoint(date, result.vitalAge.toFloat()) },
+                daysUntilReady = if (display == null) {
                     (VitalAgeSeries.MIN_WINDOW_DAYS - days.size).coerceAtLeast(1)
                 } else {
                     null
-                }
+                },
+                asOfDate = display?.first
             )
         }
     }

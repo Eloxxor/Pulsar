@@ -34,6 +34,10 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
     private val _uiState = MutableStateFlow(SleepUiState())
     val uiState: StateFlow<SleepUiState> = _uiState.asStateFlow()
 
+    // The chart detail must follow the latest night that actually has sleep — right
+    // after midnight LocalDate.now() has none yet and the chart would never load.
+    private var detailLoadedForDate: String? = null
+
     init {
         viewModelScope.launch {
             repository.observeRecentAggregates(30).collect { aggregates ->
@@ -76,19 +80,19 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
                             neutralBandFraction = 0.05
                         )
                     )
+                    if (latest.date != detailLoadedForDate) {
+                        detailLoadedForDate = latest.date
+                        val detail = repository.sleepDetailForDate(LocalDate.parse(latest.date))
+                        if (detail != null) {
+                            _uiState.value = _uiState.value.copy(
+                                heartRateBuckets = bucketHeartRateSamples(detail.heartRateSamples, detail.session.start),
+                                stagePeriods = detail.session.stages,
+                                sessionStart = detail.session.start,
+                                sessionEnd = detail.session.end
+                            )
+                        }
+                    }
                 }
-            }
-        }
-
-        viewModelScope.launch {
-            val detail = repository.sleepDetailForDate(LocalDate.now())
-            if (detail != null) {
-                _uiState.value = _uiState.value.copy(
-                    heartRateBuckets = bucketHeartRateSamples(detail.heartRateSamples, detail.session.start),
-                    stagePeriods = detail.session.stages,
-                    sessionStart = detail.session.start,
-                    sessionEnd = detail.session.end
-                )
             }
         }
     }

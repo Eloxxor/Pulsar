@@ -10,6 +10,7 @@ import com.esusic.recoverytracker.data.healthconnect.FakeHealthDataSource
 import com.esusic.recoverytracker.data.local.AppDatabase
 import com.esusic.recoverytracker.data.prefs.UserPreferencesRepository
 import com.esusic.recoverytracker.model.DeltaKind
+import com.esusic.recoverytracker.model.HeartRateSample
 import com.esusic.recoverytracker.model.SleepSession
 import com.esusic.recoverytracker.model.SleepStagePeriod
 import com.esusic.recoverytracker.model.SleepStageType
@@ -23,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -84,6 +86,38 @@ class SleepViewModelTest {
 
         assertEquals(400L, viewModel.uiState.value.totalMinutes)
         assertEquals(80L, viewModel.uiState.value.deepMinutes)
+    }
+
+    @Test
+    fun `heart rate chart data loads for the latest night with sleep even when today has none`() = runTest {
+        val synchronousExecutor = Executor { it.run() }
+        val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java)
+            .setQueryExecutor(synchronousExecutor)
+            .setTransactionExecutor(synchronousExecutor)
+            .allowMainThreadQueries().build()
+        val userPreferences = UserPreferencesRepository(
+            PreferenceDataStoreFactory.create(scope = CoroutineScope(UnconfinedTestDispatcher())) {
+                tempFolder.newFile("test3.preferences_pb")
+            }
+        )
+        // Sleep session on a past date — LocalDate.now() has no sleep, like right after midnight.
+        val start = Instant.parse("2026-07-13T00:00:00Z")
+        val session = SleepSession(start, start.plus(400, ChronoUnit.MINUTES), emptyList())
+        val source = FakeHealthDataSource(
+            sleep = listOf(session),
+            heartRate = listOf(
+                HeartRateSample(start.plus(10, ChronoUnit.MINUTES), 58L),
+                HeartRateSample(start.plus(20, ChronoUnit.MINUTES), 56L)
+            )
+        )
+        val repository = HealthRepository(AggregationService(source), db.dailyScoreDao(), db.dailyAggregateDao(), userPreferences)
+        repository.syncDate(LocalDate.of(2026, 7, 13))
+
+        val viewModel = SleepViewModel(repository)
+        viewModel.uiState.filter { it.sessionStart != null }.first()
+
+        assertEquals(start, viewModel.uiState.value.sessionStart)
+        assertTrue(viewModel.uiState.value.heartRateBuckets.isNotEmpty())
     }
 
     @Test

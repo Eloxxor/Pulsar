@@ -106,6 +106,44 @@ class TodayViewModelTest {
     }
 
     @Test
+    fun `selectDate shows the persisted values of a past day without re-syncing`() = runTest {
+        val yesterday = LocalDate.now().minusDays(1)
+        val today = LocalDate.now()
+        val source = FakeHealthDataSource(
+            restingHr = listOf(
+                RestingHrSample(yesterday.atStartOfDay(ZoneOffset.UTC).toInstant().plusSeconds(60), 50L),
+                RestingHrSample(today.atStartOfDay(ZoneOffset.UTC).toInstant().plusSeconds(60), 46L)
+            )
+        )
+        val repository = repositoryWith(source)
+        repository.syncDate(yesterday)
+
+        val viewModel = TodayViewModel(repository, source)
+        viewModel.refresh()
+        viewModel.selectDate(yesterday)
+
+        assertEquals(yesterday, viewModel.uiState.value.selectedDate)
+        assertEquals(false, viewModel.uiState.value.isToday)
+        assertEquals(50L, viewModel.uiState.value.restingHeartRate)
+        assertEquals(true, viewModel.uiState.value.canGoForward)
+    }
+
+    @Test
+    fun `score histories are exposed ascending for the gauge sheets`() = runTest {
+        val yesterday = LocalDate.now().minusDays(1)
+        val source = FakeHealthDataSource(heartRate = listOf(HeartRateSample(Instant.now(), 65L)))
+        val repository = repositoryWith(source)
+        repository.syncDate(yesterday)
+
+        val viewModel = TodayViewModel(repository, source)
+        viewModel.refresh()
+
+        assertEquals(2, viewModel.uiState.value.strainHistory.size)
+        assertEquals(yesterday, viewModel.uiState.value.strainHistory.first().date)
+        assertEquals(2, viewModel.uiState.value.recoveryHistory.size)
+    }
+
+    @Test
     fun `uiState reflects missing permissions without showing a zero score as real`() = runTest {
         val source = FakeHealthDataSource(permissionsGranted = false)
         val viewModel = TodayViewModel(repositoryWith(source), source)

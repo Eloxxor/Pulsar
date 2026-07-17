@@ -8,11 +8,11 @@ import kotlin.math.ln
 
 object StrainScoreCalculator {
     private val ZONE_WEIGHTS = mapOf(1 to 1.0, 2 to 2.0, 3 to 4.0, 4 to 8.0, 5 to 16.0)
-    private const val SCALE = 3.5
+    private const val SCALE = 2.6
     private const val MAX_STRAIN = 21.0
     private const val MAX_GAP_MINUTES = 15.0
 
-    fun calculate(date: LocalDate, samples: List<HeartRateSample>, maxHr: Double): StrainScore {
+    fun calculate(date: LocalDate, samples: List<HeartRateSample>, maxHr: Double, restingHr: Double): StrainScore {
         if (samples.size < 2) return StrainScore(date, 0.0)
 
         val sorted = samples.sortedBy { it.time }
@@ -25,7 +25,7 @@ object StrainScoreCalculator {
             if (minutes <= 0.0 || minutes > MAX_GAP_MINUTES) continue
 
             val avgBpm = (a.bpm + b.bpm) / 2.0
-            val zone = zoneFor(avgBpm, maxHr)
+            val zone = zoneFor(avgBpm, maxHr, restingHr)
             if (zone > 0) rawLoad += (ZONE_WEIGHTS[zone] ?: 0.0) * minutes
         }
 
@@ -33,8 +33,13 @@ object StrainScoreCalculator {
         return StrainScore(date, strain)
     }
 
-    private fun zoneFor(bpm: Double, maxHr: Double): Int {
-        val pct = bpm / maxHr * 100.0
+    // Zones use heart-rate reserve (Karvonen) instead of a plain percentage of max HR.
+    // With a high resting HR, everyday walking-around heart rates sit well above 50% of
+    // max HR and used to accumulate load all day, saturating the score at 21.
+    private fun zoneFor(bpm: Double, maxHr: Double, restingHr: Double): Int {
+        val reserve = maxHr - restingHr
+        if (reserve <= 0.0) return 0
+        val pct = (bpm - restingHr) / reserve * 100.0
         return when {
             pct < 50.0 -> 0
             pct < 60.0 -> 1

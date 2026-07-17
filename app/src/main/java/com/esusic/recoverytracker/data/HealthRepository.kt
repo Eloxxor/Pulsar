@@ -54,7 +54,10 @@ class HealthRepository(
         }.let { if (it.isEmpty()) 0.0 else it.average() }
 
         val maxHr = userPreferences.maxHeartRate.first()
-        val strain = StrainScoreCalculator.calculate(date, aggregate.heartRateSamples, maxHr)
+        val restingHrForStrain = aggregate.restingHeartRate?.toDouble()
+            ?: rhrBaseline.mean.takeIf { rhrBaseline.sampleCount > 0 }
+            ?: FALLBACK_RESTING_HR
+        val strain = StrainScoreCalculator.calculate(date, aggregate.heartRateSamples, maxHr, restingHrForStrain)
 
         val priorDayEntity = scoreDao.getByDate(date.minusDays(1).toString())
         val priorDayStrain = priorDayEntity?.let { StrainScore(date.minusDays(1), it.strainValue) }
@@ -95,6 +98,10 @@ class HealthRepository(
         )
         scoreDao.upsert(entity)
         return entity
+    }
+
+    companion object {
+        private const val FALLBACK_RESTING_HR = 60.0
     }
 
     suspend fun sleepDetailForDate(date: LocalDate): SleepDetail? {

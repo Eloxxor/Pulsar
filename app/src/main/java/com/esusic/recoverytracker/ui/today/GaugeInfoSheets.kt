@@ -101,7 +101,7 @@ private fun SleepSheetContent(uiState: TodayUiState) {
         Text("Slept ${it / 60}h ${it % 60}m last night.", style = MaterialTheme.typography.bodyMedium)
     }
     Text(
-        "How much of last night's sleep need you covered. Need = your typical sleep, plus extra after high-strain days, plus repayment of recent sleep debt.",
+        "How well last night covered your sleep need. Need = your typical sleep (floored at 7h), plus extra after high-strain days and repayment of recent sleep debt. 30% of the score is quality: deep + REM share of the night vs a 40% target.",
         style = MaterialTheme.typography.bodyMedium,
         color = AppColors.TextSecondary
     )

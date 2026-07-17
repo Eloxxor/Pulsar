@@ -7,6 +7,7 @@ import com.esusic.recoverytracker.data.local.DailyScoreEntity
 import com.esusic.recoverytracker.data.local.toEntity
 import com.esusic.recoverytracker.data.prefs.UserPreferencesRepository
 import com.esusic.recoverytracker.model.SleepDetail
+import com.esusic.recoverytracker.model.SleepStageType
 import com.esusic.recoverytracker.model.StrainScore
 import com.esusic.recoverytracker.scoring.BaselineCalculator
 import com.esusic.recoverytracker.scoring.RecoveryScoreCalculator
@@ -81,7 +82,10 @@ class HealthRepository(
             actualSleepMinutes = aggregate.sleep?.durationMinutes,
             typicalSleepMinutes = typicalSleepMinutes,
             priorDayStrain = priorDayStrain,
-            accumulatedDebtMinutes = sleepDebtMinutes
+            accumulatedDebtMinutes = sleepDebtMinutes,
+            deepRemMinutes = aggregate.sleep?.let {
+                it.minutesIn(SleepStageType.DEEP) + it.minutesIn(SleepStageType.REM)
+            }
         )
 
         val entity = DailyScoreEntity(

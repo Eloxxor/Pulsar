@@ -64,4 +64,33 @@ class SleepPerformanceCalculatorTest {
         val result = SleepPerformanceCalculator.calculate(600L, 480.0, null, 0.0)
         assertEquals(100, result)
     }
+
+    @Test
+    fun `need is floored at 7 hours even when the personal average is lower`() {
+        // typical 390 -> need floored to 420; 390/420*100 = 92.86 -> 93
+        val result = SleepPerformanceCalculator.calculate(390L, 390.0, null, 0.0)
+        assertEquals(93, result)
+    }
+
+    @Test
+    fun `low deep and rem share drags the score even when duration is met`() {
+        // duration 480/480 = 1.0; quality (120/480)/0.40 = 0.625
+        // 0.7*1.0 + 0.3*0.625 = 0.8875 -> 89
+        val result = SleepPerformanceCalculator.calculate(480L, 480.0, null, 0.0, deepRemMinutes = 120L)
+        assertEquals(89, result)
+    }
+
+    @Test
+    fun `deep and rem share at or above 40 percent scores full quality`() {
+        val atTarget = SleepPerformanceCalculator.calculate(480L, 480.0, null, 0.0, deepRemMinutes = 192L)
+        val aboveTarget = SleepPerformanceCalculator.calculate(480L, 480.0, null, 0.0, deepRemMinutes = 300L)
+        assertEquals(100, atTarget)
+        assertEquals(100, aboveTarget)
+    }
+
+    @Test
+    fun `missing stage data falls back to duration-only scoring`() {
+        val result = SleepPerformanceCalculator.calculate(480L, 480.0, null, 0.0, deepRemMinutes = null)
+        assertEquals(100, result)
+    }
 }

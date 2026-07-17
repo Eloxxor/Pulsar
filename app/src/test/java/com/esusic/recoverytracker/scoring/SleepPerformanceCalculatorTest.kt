@@ -74,15 +74,16 @@ class SleepPerformanceCalculatorTest {
 
     @Test
     fun `low deep and rem share drags the score even when duration is met`() {
-        // duration 480/480 = 1.0; quality (120/480)/0.40 = 0.625
-        // 0.7*1.0 + 0.3*0.625 = 0.8875 -> 89
+        // duration 480/480 = 1.0; quality (120/480)/0.45 = 0.5556
+        // weights renormalize over duration+quality: 0.45/0.8 and 0.35/0.8
+        // 0.5625*1.0 + 0.4375*0.5556 = 0.8056 -> 81
         val result = SleepPerformanceCalculator.calculate(480L, 480.0, null, 0.0, deepRemMinutes = 120L)
-        assertEquals(89, result)
+        assertEquals(81, result)
     }
 
     @Test
-    fun `deep and rem share at or above 40 percent scores full quality`() {
-        val atTarget = SleepPerformanceCalculator.calculate(480L, 480.0, null, 0.0, deepRemMinutes = 192L)
+    fun `deep and rem share at or above 45 percent scores full quality`() {
+        val atTarget = SleepPerformanceCalculator.calculate(480L, 480.0, null, 0.0, deepRemMinutes = 216L)
         val aboveTarget = SleepPerformanceCalculator.calculate(480L, 480.0, null, 0.0, deepRemMinutes = 300L)
         assertEquals(100, atTarget)
         assertEquals(100, aboveTarget)
@@ -92,5 +93,32 @@ class SleepPerformanceCalculatorTest {
     fun `missing stage data falls back to duration-only scoring`() {
         val result = SleepPerformanceCalculator.calculate(480L, 480.0, null, 0.0, deepRemMinutes = null)
         assertEquals(100, result)
+    }
+
+    @Test
+    fun `sleeping through 95 percent of the night scores full restfulness`() {
+        // duration 1.0; quality (216/480)/0.45 = 1.0; asleep share 456/480 = 0.95 -> 1.0
+        val result = SleepPerformanceCalculator.calculate(
+            480L, 480.0, null, 0.0, deepRemMinutes = 216L, asleepMinutes = 456L
+        )
+        assertEquals(100, result)
+    }
+
+    @Test
+    fun `a restless night caps the score even with perfect duration and stages`() {
+        // asleep share 408/480 = 0.85 -> restfulness 0; 0.45 + 0.35 + 0 = 0.80 -> 80
+        val result = SleepPerformanceCalculator.calculate(
+            480L, 480.0, null, 0.0, deepRemMinutes = 216L, asleepMinutes = 408L
+        )
+        assertEquals(80, result)
+    }
+
+    @Test
+    fun `restfulness scales linearly between 85 and 95 percent asleep`() {
+        // asleep share 432/480 = 0.90 -> restfulness 0.5; 0.45 + 0.35 + 0.2*0.5 = 0.90 -> 90
+        val result = SleepPerformanceCalculator.calculate(
+            480L, 480.0, null, 0.0, deepRemMinutes = 216L, asleepMinutes = 432L
+        )
+        assertEquals(90, result)
     }
 }

@@ -98,13 +98,20 @@ class HealthRepository(
             typicalSleepMinutes,
             recentActualSleepMinutes
         )
+        // A session without stage data must pass null, not 0 — otherwise the quality
+        // and restfulness components would read an empty stage list as a terrible night.
+        val stagedSleep = aggregate.sleep?.takeIf { it.stages.isNotEmpty() }
         val sleepPerformance = SleepPerformanceCalculator.calculate(
             actualSleepMinutes = aggregate.sleep?.durationMinutes,
             typicalSleepMinutes = typicalSleepMinutes,
             priorDayStrain = priorDayStrain,
             accumulatedDebtMinutes = sleepDebtMinutes,
-            deepRemMinutes = aggregate.sleep?.let {
+            deepRemMinutes = stagedSleep?.let {
                 it.minutesIn(SleepStageType.DEEP) + it.minutesIn(SleepStageType.REM)
+            },
+            asleepMinutes = stagedSleep?.let {
+                it.minutesIn(SleepStageType.DEEP) + it.minutesIn(SleepStageType.REM) +
+                    it.minutesIn(SleepStageType.LIGHT)
             }
         )
 
@@ -130,7 +137,8 @@ class HealthRepository(
 
         // Bump whenever a scoring formula changes so stored scores get recomputed once.
         // v2: sleep 7h floor + deep/REM quality, steps in strain.
-        const val SCORE_FORMULA_VERSION = 2
+        // v3: sleep 45/35/20 duration/quality/restfulness with 45% deep+REM target.
+        const val SCORE_FORMULA_VERSION = 3
     }
 
     suspend fun sleepDetailForDate(date: LocalDate): SleepDetail? {

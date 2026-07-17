@@ -10,9 +10,14 @@ object SleepPerformanceCalculator {
     private const val MAX_NIGHTLY_DEBT_REPAYMENT_MINUTES = 60.0
     private const val MAX_STRAIN = 21.0
     private const val MIN_NEED_MINUTES = 420.0
-    private const val DEEP_REM_TARGET_SHARE = 0.40
-    private const val DURATION_WEIGHT = 0.7
-    private const val QUALITY_WEIGHT = 0.3
+    private const val DEEP_REM_TARGET_SHARE = 0.45
+    private const val DURATION_WEIGHT = 0.45
+    private const val QUALITY_WEIGHT = 0.35
+    private const val RESTFULNESS_WEIGHT = 0.20
+
+    // Asleep share of the session: 95%+ earns full restfulness, 85% or less earns none.
+    private const val ASLEEP_SHARE_FLOOR = 0.85
+    private const val ASLEEP_SHARE_TARGET = 0.95
 
     fun calculateSleepDebtMinutes(typicalSleepMinutes: Double, recentActualSleepMinutes: List<Long>): Double {
         val windowed = recentActualSleepMinutes.takeLast(DEBT_WINDOW_DAYS)
@@ -25,7 +30,8 @@ object SleepPerformanceCalculator {
         typicalSleepMinutes: Double,
         priorDayStrain: StrainScore?,
         accumulatedDebtMinutes: Double,
-        deepRemMinutes: Long? = null
+        deepRemMinutes: Long? = null,
+        asleepMinutes: Long? = null
     ): Int? {
         if (actualSleepMinutes == null || typicalSleepMinutes <= 0.0) return null
 
@@ -42,12 +48,22 @@ object SleepPerformanceCalculator {
         } else {
             null
         }
-
-        val performance = if (qualityScore != null) {
-            (DURATION_WEIGHT * durationScore + QUALITY_WEIGHT * qualityScore) * 100.0
+        val restfulnessScore = if (asleepMinutes != null && actualSleepMinutes > 0) {
+            val asleepShare = asleepMinutes.toDouble() / actualSleepMinutes
+            ((asleepShare - ASLEEP_SHARE_FLOOR) / (ASLEEP_SHARE_TARGET - ASLEEP_SHARE_FLOOR)).coerceIn(0.0, 1.0)
         } else {
-            durationScore * 100.0
+            null
         }
+
+        // Weights renormalize over the available components so a night without stage
+        // data still scores on duration alone instead of being penalised for it.
+        val weighted = buildList {
+            add(DURATION_WEIGHT to durationScore)
+            qualityScore?.let { add(QUALITY_WEIGHT to it) }
+            restfulnessScore?.let { add(RESTFULNESS_WEIGHT to it) }
+        }
+        val totalWeight = weighted.sumOf { it.first }
+        val performance = weighted.sumOf { (weight, score) -> weight * score } / totalWeight * 100.0
         return performance.coerceIn(0.0, 100.0).roundToInt()
     }
 }

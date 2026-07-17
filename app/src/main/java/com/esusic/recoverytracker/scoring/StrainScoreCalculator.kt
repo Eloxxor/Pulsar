@@ -12,9 +12,17 @@ object StrainScoreCalculator {
     private const val MAX_STRAIN = 21.0
     private const val MAX_GAP_MINUTES = 15.0
 
-    fun calculate(date: LocalDate, samples: List<HeartRateSample>, maxHr: Double, restingHr: Double): StrainScore {
-        if (samples.size < 2) return StrainScore(date, 0.0)
+    // Everyday steps sit below 50% of heart-rate reserve and never reach the HR zones,
+    // yet a 15k-step day is real load. Calibrated so ~15k steps alone land around 8.5.
+    private const val STEP_LOAD_PER_STEP = 0.0016
 
+    fun calculate(
+        date: LocalDate,
+        samples: List<HeartRateSample>,
+        maxHr: Double,
+        restingHr: Double,
+        steps: Int = 0
+    ): StrainScore {
         val sorted = samples.sortedBy { it.time }
         var rawLoad = 0.0
 
@@ -28,6 +36,8 @@ object StrainScoreCalculator {
             val zone = zoneFor(avgBpm, maxHr, restingHr)
             if (zone > 0) rawLoad += (ZONE_WEIGHTS[zone] ?: 0.0) * minutes
         }
+
+        rawLoad += steps.coerceAtLeast(0) * STEP_LOAD_PER_STEP
 
         val strain = (ln(1.0 + rawLoad) * SCALE).coerceIn(0.0, MAX_STRAIN)
         return StrainScore(date, strain)

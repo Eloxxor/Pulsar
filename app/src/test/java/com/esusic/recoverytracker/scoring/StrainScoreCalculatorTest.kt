@@ -78,6 +78,27 @@ class StrainScoreCalculatorTest {
     }
 
     @Test
+    fun `steps alone produce moderate strain for a high-step day`() {
+        val result = StrainScoreCalculator.calculate(date, emptyList(), maxHr, restingHr, steps = 15407)
+        assertTrue("expected ~8-9 strain, got ${result.value}", result.value in 8.0..9.0)
+    }
+
+    @Test
+    fun `steps add to heart-rate load instead of replacing it`() {
+        val workout = samplesAt(List(60) { 165L })
+        val withoutSteps = StrainScoreCalculator.calculate(date, workout, maxHr, restingHr)
+        val withSteps = StrainScoreCalculator.calculate(date, workout, maxHr, restingHr, steps = 15407)
+        assertTrue(withSteps.value > withoutSteps.value)
+        assertTrue(withSteps.value <= 21.0)
+    }
+
+    @Test
+    fun `few steps barely move the score`() {
+        val result = StrainScoreCalculator.calculate(date, emptyList(), maxHr, restingHr, steps = 1000)
+        assertTrue("expected low strain, got ${result.value}", result.value < 3.0)
+    }
+
+    @Test
     fun `degenerate reserve when resting HR meets max HR yields zero strain`() {
         val samples = samplesAt(List(60) { 150L })
         val result = StrainScoreCalculator.calculate(date, samples, maxHr = 100.0, restingHr = 100.0)

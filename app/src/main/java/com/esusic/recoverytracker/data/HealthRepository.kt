@@ -58,7 +58,13 @@ class HealthRepository(
         val restingHrForStrain = aggregate.restingHeartRate?.toDouble()
             ?: rhrBaseline.mean.takeIf { rhrBaseline.sampleCount > 0 }
             ?: FALLBACK_RESTING_HR
-        val strain = StrainScoreCalculator.calculate(date, aggregate.heartRateSamples, maxHr, restingHrForStrain)
+        val strain = StrainScoreCalculator.calculate(
+            date,
+            aggregate.heartRateSamples,
+            maxHr,
+            restingHrForStrain,
+            steps = aggregate.steps
+        )
 
         val priorDayEntity = scoreDao.getByDate(date.minusDays(1).toString())
         val priorDayStrain = priorDayEntity?.let { StrainScore(date.minusDays(1), it.strainValue) }

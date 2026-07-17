@@ -9,6 +9,7 @@ object AppColors {
     val Hrv = Color(0xFF35D0C4)
     val Rhr = Color(0xFFFF8A5C)
     val HeartRate = Color(0xFFFF7B6B)
+    val VitalAge = Color(0xFFD9B54A)
     val Warning = Color(0xFFE8A33D)
     val Danger = Color(0xFFE8503D)
     val TextPrimary = Color(0xFFF2F3F5)

@@ -28,7 +28,13 @@ class HealthRepository(
 
     fun observeRecentAggregates(days: Int): Flow<List<DailyAggregateEntity>> = aggregateDao.observeRecent(days)
 
-    suspend fun syncToday(): DailyScoreEntity = syncDate(LocalDate.now(clock))
+    suspend fun syncToday(): DailyScoreEntity {
+        val today = LocalDate.now(clock)
+        // Fitbit uploads nightly metrics (skin temp, SpO2, sometimes sleep) hours after the
+        // morning sync. Re-sync yesterday on every refresh so late arrivals get backfilled.
+        syncDate(today.minusDays(1))
+        return syncDate(today)
+    }
 
     suspend fun syncDate(date: LocalDate): DailyScoreEntity {
         val aggregate = aggregationService.aggregateForDate(date)

@@ -111,6 +111,19 @@ class HealthRepositoryTest {
     }
 
     @Test
+    fun `syncToday also re-syncs yesterday so late-arriving nightly data is backfilled`() = runTest {
+        // Fitbit often uploads nightly metrics hours after the morning sync. Re-syncing
+        // yesterday on every refresh closes that gap.
+        val repository = repositoryWith(FakeHealthDataSource())
+
+        repository.syncToday()
+
+        val yesterday = LocalDate.now(fixedClock).minusDays(1)
+        assertTrue(db.dailyAggregateDao().getByDate(yesterday.toString()) != null)
+        assertTrue(db.dailyScoreDao().getByDate(yesterday.toString()) != null)
+    }
+
+    @Test
     fun `syncDate computes and persists sleepPerformance for a day with a sleep session`() = runTest {
         val dayStart = date.atStartOfDay(ZoneOffset.UTC).toInstant()
         val source = FakeHealthDataSource(

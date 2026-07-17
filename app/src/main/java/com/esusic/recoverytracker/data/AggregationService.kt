@@ -18,6 +18,12 @@ class AggregationService(private val dataSource: HealthDataSource) {
         // the target day, then keep only sessions that woke the person up on this calendar day.
         val sleepWindowStart = date.minusDays(1).atTime(18, 0).atZone(zone).toInstant()
 
+        // Nocturnal metrics (skin temp, SpO2) are stamped during sleep — Fitbit stamps them at
+        // bedtime, usually before midnight on the previous calendar day. Use an evening-to-evening
+        // window so last night's values land on the wake-up day; the 18:00 cutoff separates
+        // consecutive nights.
+        val nocturnalEnd = date.atTime(18, 0).atZone(zone).toInstant()
+
         val heartRateSamples = dataSource.heartRateSamples(start, end)
         val hrvSamples = dataSource.hrvSamples(start, end)
         val restingHrSamples = dataSource.restingHeartRate(start, end)
@@ -28,8 +34,8 @@ class AggregationService(private val dataSource: HealthDataSource) {
         val activeCalories = dataSource.totalActiveCalories(start, end)
         val exerciseSessions = dataSource.exerciseSessions(start, end)
         val respiratoryRateSamples = dataSource.respiratoryRateSamples(start, end)
-        val oxygenSaturationSamples = dataSource.oxygenSaturationSamples(start, end)
-        val skinTemperatureDeltaSamples = dataSource.skinTemperatureDeltaSamples(start, end)
+        val oxygenSaturationSamples = dataSource.oxygenSaturationSamples(sleepWindowStart, nocturnalEnd)
+        val skinTemperatureDeltaSamples = dataSource.skinTemperatureDeltaSamples(sleepWindowStart, nocturnalEnd)
 
         val avgHrv = hrvSamples.takeIf { it.isNotEmpty() }?.map { it.rmssdMillis }?.average()
         val restingHeartRate = restingHrSamples.minByOrNull { it.bpm }?.bpm

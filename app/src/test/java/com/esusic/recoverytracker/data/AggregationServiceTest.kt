@@ -133,6 +133,29 @@ class AggregationServiceTest {
     }
 
     @Test
+    fun `skin temperature stamped at bedtime before midnight counts toward the wake-up day`() = runTest {
+        // Fitbit writes one skin-temp record per night, stamped at bedtime — usually before
+        // midnight, i.e. on the previous calendar day.
+        val bedtimeSample = SkinTemperatureDeltaSample(dayStart.minusSeconds(2 * 3600), 0.5) // 22:00 the evening before
+        val previousNightSample = SkinTemperatureDeltaSample(dayStart.minusSeconds(20 * 3600), -0.3) // 04:00 the previous day
+        val source = FakeHealthDataSource(skinTemperatureDeltas = listOf(bedtimeSample, previousNightSample))
+
+        val result = AggregationService(source).aggregateForDate(date, zone)
+
+        assertEquals(0.5, result.avgSkinTemperatureDeltaCelsius!!, 0.0001)
+    }
+
+    @Test
+    fun `oxygen saturation stamped at bedtime before midnight counts toward the wake-up day`() = runTest {
+        val bedtimeSample = OxygenSaturationSample(dayStart.minusSeconds(2 * 3600), 95.0) // 22:00 the evening before
+        val source = FakeHealthDataSource(oxygenSaturation = listOf(bedtimeSample))
+
+        val result = AggregationService(source).aggregateForDate(date, zone)
+
+        assertEquals(95.0, result.avgOxygenSaturationPercent!!, 0.0001)
+    }
+
+    @Test
     fun `latestHeartRateSample picks the most recent heart rate sample of the day`() = runTest {
         val earlier = HeartRateSample(dayStart.plusSeconds(3600), 65L)
         val later = HeartRateSample(dayStart.plusSeconds(7200), 72L)

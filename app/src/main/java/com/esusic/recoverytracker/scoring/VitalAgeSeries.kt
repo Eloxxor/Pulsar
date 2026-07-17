@@ -15,7 +15,11 @@ object VitalAgeSeries {
     const val WINDOW_DAYS = 14L
     const val MIN_WINDOW_DAYS = 3
 
-    fun build(days: List<DailyVitals>, birthYear: Int): List<Pair<LocalDate, VitalAgeResult>> {
+    fun build(
+        days: List<DailyVitals>,
+        birthYear: Int,
+        maxHrBpm: Double? = null
+    ): List<Pair<LocalDate, VitalAgeResult>> {
         val byDate = days.associateBy { it.date }
         return days.map { it.date }.sorted().mapNotNull { date ->
             val window = (0 until WINDOW_DAYS).mapNotNull { byDate[date.minusDays(it)] }
@@ -25,7 +29,8 @@ object VitalAgeSeries {
                 avgRestingHr = window.mapNotNull { it.restingHr }.averageOrNull(),
                 avgSleepMinutes = window.mapNotNull { it.sleepMinutes }.averageOrNull(),
                 avgSteps = window.mapNotNull { it.steps }.averageOrNull(),
-                avgStrain = window.mapNotNull { it.strain }.averageOrNull()
+                avgStrain = window.mapNotNull { it.strain }.averageOrNull(),
+                maxHrBpm = maxHrBpm
             )
             VitalAgeCalculator.calculate(date.year - birthYear, inputs)?.let { date to it }
         }

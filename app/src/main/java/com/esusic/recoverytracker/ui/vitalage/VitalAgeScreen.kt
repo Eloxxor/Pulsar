@@ -143,6 +143,7 @@ private fun AgingPaceCard(uiState: VitalAgeUiState) {
 private fun BreakdownCard(result: VitalAgeResult) {
     SectionCard(title = "What drives it") {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            ComponentRow("Cardio fitness (est. VO2max)", result.fitness)
             ComponentRow("HRV", result.hrv)
             ComponentRow("Resting HR", result.rhr)
             ComponentRow("Sleep", result.sleep)

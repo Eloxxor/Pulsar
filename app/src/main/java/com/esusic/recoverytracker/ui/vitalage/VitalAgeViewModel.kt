@@ -66,7 +66,7 @@ class VitalAgeViewModel(
                 )
             }
 
-            val series = VitalAgeSeries.build(days, birthYear)
+            val series = VitalAgeSeries.build(days, birthYear, maxHrBpm = userPreferences.maxHeartRate.first())
             val anchor = LocalDate.now(clock).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
             // The shown number only changes on Mondays; before the first qualified
             // Monday fall back to the newest point so calibration still shows something.

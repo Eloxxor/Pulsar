@@ -46,6 +46,14 @@ class UserPreferencesRepositoryTest {
     }
 
     @Test
+    fun `scoreFormulaVersion defaults to 1 and round-trips`() = runTest {
+        val repo = UserPreferencesRepository(newDataStore())
+        assertEquals(1, repo.scoreFormulaVersion.first())
+        repo.setScoreFormulaVersion(2)
+        assertEquals(2, repo.scoreFormulaVersion.first())
+    }
+
+    @Test
     fun `maxHeartRate derives from birthYear via Tanaka formula`() = runTest {
         val repo = UserPreferencesRepository(newDataStore())
         val currentYear = LocalDate.now().year

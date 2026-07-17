@@ -22,13 +22,22 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
         }
     }
 
+    // Version of the scoring formulas the stored daily scores were computed with.
+    // Bumping HealthRepository.SCORE_FORMULA_VERSION triggers a one-time backfill.
+    val scoreFormulaVersion: Flow<Int> = dataStore.data.map { it[SCORE_FORMULA_VERSION_KEY] ?: 1 }
+
     suspend fun setBirthYear(year: Int) {
         dataStore.edit { it[BIRTH_YEAR_KEY] = year }
+    }
+
+    suspend fun setScoreFormulaVersion(version: Int) {
+        dataStore.edit { it[SCORE_FORMULA_VERSION_KEY] = version }
     }
 
     companion object {
         const val DEFAULT_MAX_HR = 190.0
         const val MIN_MAX_HR = 120.0
         private val BIRTH_YEAR_KEY = intPreferencesKey("birth_year")
+        private val SCORE_FORMULA_VERSION_KEY = intPreferencesKey("score_formula_version")
     }
 }

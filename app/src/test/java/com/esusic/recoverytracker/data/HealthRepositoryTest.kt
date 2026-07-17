@@ -16,6 +16,7 @@ import com.esusic.recoverytracker.model.SleepSession
 import com.esusic.recoverytracker.model.SleepStagePeriod
 import com.esusic.recoverytracker.model.SleepStageType
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -121,6 +122,29 @@ class HealthRepositoryTest {
         val yesterday = LocalDate.now(fixedClock).minusDays(1)
         assertTrue(db.dailyAggregateDao().getByDate(yesterday.toString()) != null)
         assertTrue(db.dailyScoreDao().getByDate(yesterday.toString()) != null)
+    }
+
+    @Test
+    fun `syncToday recomputes stored past days once when the formula version is stale`() = runTest {
+        val pastDay = date.minusDays(3)
+        val dayStart = pastDay.atStartOfDay(ZoneOffset.UTC).toInstant()
+        val source = FakeHealthDataSource(
+            restingHr = listOf(RestingHrSample(dayStart.plusSeconds(60), 50L))
+        )
+        val repository = repositoryWith(source)
+        repository.syncDate(pastDay)
+        val computed = db.dailyScoreDao().getByDate(pastDay.toString())!!
+        db.dailyScoreDao().upsert(computed.copy(strainValue = 99.9))
+
+        repository.syncToday() // default version 1 < SCORE_FORMULA_VERSION -> backfill
+
+        assertEquals(computed.strainValue, db.dailyScoreDao().getByDate(pastDay.toString())!!.strainValue, 0.0001)
+        assertEquals(HealthRepository.SCORE_FORMULA_VERSION, userPreferences.scoreFormulaVersion.first())
+
+        // Version now current: a second corruption must survive syncToday untouched.
+        db.dailyScoreDao().upsert(computed.copy(strainValue = 99.9))
+        repository.syncToday()
+        assertEquals(99.9, db.dailyScoreDao().getByDate(pastDay.toString())!!.strainValue, 0.0001)
     }
 
     @Test

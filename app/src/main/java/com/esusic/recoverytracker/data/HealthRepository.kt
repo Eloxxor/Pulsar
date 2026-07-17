@@ -31,10 +31,24 @@ class HealthRepository(
 
     suspend fun syncToday(): DailyScoreEntity {
         val today = LocalDate.now(clock)
+        backfillIfFormulaChanged(today)
         // Fitbit uploads nightly metrics (skin temp, SpO2, sometimes sleep) hours after the
         // morning sync. Re-sync yesterday on every refresh so late arrivals get backfilled.
         syncDate(today.minusDays(1))
         return syncDate(today)
+    }
+
+    // Health Connect only serves the last 30 days; older dates would re-aggregate
+    // empty and wipe good data, so the backfill stops at today-29.
+    private suspend fun backfillIfFormulaChanged(today: LocalDate) {
+        if (userPreferences.scoreFormulaVersion.first() >= SCORE_FORMULA_VERSION) return
+        val earliestReadable = today.minusDays(29)
+        aggregateDao.observeRecent(BACKFILL_LOOKBACK_DAYS).first()
+            .map { LocalDate.parse(it.date) }
+            .filter { it >= earliestReadable && it < today.minusDays(1) }
+            .sorted()
+            .forEach { syncDate(it) }
+        userPreferences.setScoreFormulaVersion(SCORE_FORMULA_VERSION)
     }
 
     suspend fun syncDate(date: LocalDate): DailyScoreEntity {
@@ -112,6 +126,11 @@ class HealthRepository(
 
     companion object {
         private const val FALLBACK_RESTING_HR = 60.0
+        private const val BACKFILL_LOOKBACK_DAYS = 60
+
+        // Bump whenever a scoring formula changes so stored scores get recomputed once.
+        // v2: sleep 7h floor + deep/REM quality, steps in strain.
+        const val SCORE_FORMULA_VERSION = 2
     }
 
     suspend fun sleepDetailForDate(date: LocalDate): SleepDetail? {

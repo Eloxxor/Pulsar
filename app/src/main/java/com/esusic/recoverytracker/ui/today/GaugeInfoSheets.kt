@@ -124,7 +124,7 @@ private fun StrainSheetContent(uiState: TodayUiState) {
         color = AppColors.Strain
     )
     Text(
-        "Cardiovascular load today, 0–21 (logarithmic). Time in higher heart-rate zones counts much more.",
+        "Load today, 0–21 (logarithmic). Time in higher heart-rate zones counts much more; daily steps add on as light load.",
         style = MaterialTheme.typography.bodyMedium,
         color = AppColors.TextSecondary
     )

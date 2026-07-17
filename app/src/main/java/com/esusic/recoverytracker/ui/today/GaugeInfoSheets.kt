@@ -24,7 +24,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.esusic.recoverytracker.ui.common.ChartPoint
 import com.esusic.recoverytracker.ui.common.Eyebrow
+import com.esusic.recoverytracker.ui.common.MetricLineChart
 import com.esusic.recoverytracker.ui.theme.AppColors
 import kotlin.math.roundToInt
 
@@ -86,6 +88,7 @@ private fun RecoverySheetContent(uiState: TodayUiState) {
     BandRow(AppColors.Recovery, "67–100", "Recovered — ready for high strain")
     BandRow(AppColors.Warning, "34–66", "Adequate — moderate strain is fine")
     BandRow(AppColors.Danger, "0–33", "Run down — prioritise rest")
+    HistoryChart(uiState.recoveryHistory, AppColors.Recovery)
 }
 
 @Composable
@@ -105,6 +108,7 @@ private fun SleepSheetContent(uiState: TodayUiState) {
         style = MaterialTheme.typography.bodyMedium,
         color = AppColors.TextSecondary
     )
+    HistoryChart(uiState.sleepPerformanceHistory, AppColors.SleepViolet)
 }
 
 @Composable
@@ -126,6 +130,18 @@ private fun StrainSheetContent(uiState: TodayUiState) {
     StrainBandRow("Moderate", "10 – 13.9", strain != null && strain >= 10.0 && strain < 14.0)
     StrainBandRow("High", "14 – 17.9", strain != null && strain >= 14.0 && strain < 18.0)
     StrainBandRow("All out", "18 – 21", strain != null && strain >= 18.0)
+    HistoryChart(uiState.strainHistory, AppColors.Strain) { "%.1f".format(it) }
+}
+
+@Composable
+private fun HistoryChart(
+    points: List<ChartPoint>,
+    color: Color,
+    valueFormatter: (Float) -> String = { "%.0f".format(it) }
+) {
+    if (points.size < 2) return
+    Eyebrow("Last 30 days")
+    MetricLineChart(points = points, lineColor = color, valueFormatter = valueFormatter)
 }
 
 @Composable

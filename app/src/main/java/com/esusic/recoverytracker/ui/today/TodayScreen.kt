@@ -19,6 +19,7 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -67,9 +68,33 @@ fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit, onMetricC
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Eyebrow(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE · MMM d", Locale.ENGLISH)))
-                    Text("Today", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { viewModel.goToPreviousDay() }, enabled = uiState.canGoBack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "Previous day",
+                            tint = if (uiState.canGoBack) AppColors.TextSecondary else AppColors.TextMuted
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Eyebrow(uiState.selectedDate.format(DateTimeFormatter.ofPattern("EEEE · MMM d", Locale.ENGLISH)))
+                        Text(
+                            when {
+                                uiState.isToday -> "Today"
+                                uiState.selectedDate == LocalDate.now().minusDays(1) -> "Yesterday"
+                                else -> uiState.selectedDate.format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH))
+                            },
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    IconButton(onClick = { viewModel.goToNextDay() }, enabled = uiState.canGoForward) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Next day",
+                            tint = if (uiState.canGoForward) AppColors.TextSecondary else AppColors.TextMuted
+                        )
+                    }
                 }
                 IconButton(onClick = onOpenSettings) {
                     Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = AppColors.TextSecondary)

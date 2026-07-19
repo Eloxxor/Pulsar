@@ -23,6 +23,7 @@ object ServiceLocator {
 
     val database: AppDatabase by lazy {
         Room.databaseBuilder(appContext, AppDatabase::class.java, "recovery_tracker.db")
+            .addMigrations(com.esusic.recoverytracker.data.local.MIGRATION_3_4)
             .fallbackToDestructiveMigration()
             .build()
     }

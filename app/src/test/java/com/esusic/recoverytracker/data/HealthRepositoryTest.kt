@@ -159,6 +159,21 @@ class HealthRepositoryTest {
     }
 
     @Test
+    fun `syncDate stores stress and zone minutes`() = runTest {
+        val dayStart = date.atStartOfDay(ZoneOffset.UTC).toInstant()
+        // Steady 130 bpm for 30 min: well above the 50% HRR floor and 70 bpm above resting.
+        val source = FakeHealthDataSource(
+            heartRate = (0..3).map { HeartRateSample(dayStart.plusSeconds(it * 600L), 130L) },
+            restingHr = listOf(RestingHrSample(dayStart.plusSeconds(60), 60L))
+        )
+
+        val result = repositoryWith(source).syncDate(date)
+
+        assertTrue(result.stressValue != null && result.stressValue!! > 0.0)
+        assertTrue(result.zoneMinutes != null && result.zoneMinutes!! > 0)
+    }
+
+    @Test
     fun `sleepDetailForDate returns null when there is no sleep session`() = runTest {
         val result = repositoryWith(FakeHealthDataSource()).sleepDetailForDate(date)
         assertNull(result)

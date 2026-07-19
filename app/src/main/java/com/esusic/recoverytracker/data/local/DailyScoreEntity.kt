@@ -18,7 +18,9 @@ data class DailyScoreEntity(
     val strainValue: Double,
     val lastSyncedAtEpochMillis: Long,
     val isComplete: Boolean,
-    val sleepPerformance: Int? = null
+    val sleepPerformance: Int? = null,
+    val stressValue: Double? = null,
+    val zoneMinutes: Int? = null
 )
 
 @Dao

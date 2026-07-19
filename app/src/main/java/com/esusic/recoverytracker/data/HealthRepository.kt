@@ -13,6 +13,8 @@ import com.esusic.recoverytracker.scoring.BaselineCalculator
 import com.esusic.recoverytracker.scoring.RecoveryScoreCalculator
 import com.esusic.recoverytracker.scoring.SleepPerformanceCalculator
 import com.esusic.recoverytracker.scoring.StrainScoreCalculator
+import com.esusic.recoverytracker.scoring.StressScoreCalculator
+import com.esusic.recoverytracker.scoring.ZoneMinutesCalculator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import java.time.Clock
@@ -80,6 +82,15 @@ class HealthRepository(
             steps = aggregate.steps
         )
 
+        val zoneMinutes = ZoneMinutesCalculator.calculate(aggregate.heartRateSamples, maxHr, restingHrForStrain)
+        val stress = StressScoreCalculator.calculate(
+            samples = aggregate.heartRateSamples,
+            restingHr = aggregate.restingHeartRate?.toDouble()
+                ?: rhrBaseline.mean.takeIf { rhrBaseline.sampleCount > 0 },
+            hrvBaselineMillis = hrvBaseline.mean.takeIf { hrvBaseline.sampleCount > 0 },
+            todayHrvMillis = aggregate.avgHrvMillis
+        )
+
         val priorDayEntity = scoreDao.getByDate(date.minusDays(1).toString())
         val priorDayStrain = priorDayEntity?.let { StrainScore(date.minusDays(1), it.strainValue) }
 
@@ -125,7 +136,9 @@ class HealthRepository(
             strainValue = strain.value,
             lastSyncedAtEpochMillis = clock.millis(),
             isComplete = aggregate.isComplete,
-            sleepPerformance = sleepPerformance
+            sleepPerformance = sleepPerformance,
+            stressValue = stress,
+            zoneMinutes = zoneMinutes
         )
         scoreDao.upsert(entity)
         return entity
@@ -138,7 +151,8 @@ class HealthRepository(
         // Bump whenever a scoring formula changes so stored scores get recomputed once.
         // v2: sleep 7h floor + deep/REM quality, steps in strain.
         // v3: sleep 45/35/20 duration/quality/restfulness with 45% deep+REM target.
-        const val SCORE_FORMULA_VERSION = 3
+        // v4: stress and zone-minutes columns filled in.
+        const val SCORE_FORMULA_VERSION = 4
     }
 
     suspend fun sleepDetailForDate(date: LocalDate): SleepDetail? {

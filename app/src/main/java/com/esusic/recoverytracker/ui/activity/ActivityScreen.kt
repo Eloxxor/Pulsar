@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
@@ -23,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.esusic.recoverytracker.ui.common.ChartPoint
 import com.esusic.recoverytracker.ui.common.DeltaChip
 import com.esusic.recoverytracker.ui.common.MetricLineChart
@@ -34,6 +34,7 @@ import com.esusic.recoverytracker.ui.common.StatusPill
 import com.esusic.recoverytracker.ui.presentation.effortStatus
 import com.esusic.recoverytracker.ui.presentation.todayRecommendation
 import com.esusic.recoverytracker.ui.theme.AppColors
+import com.esusic.recoverytracker.ui.today.CircularGauge
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -61,33 +62,51 @@ fun ActivityScreen(viewModel: ActivityViewModel) {
             onNext = viewModel::goToNextDay
         )
 
-        SectionCard {
+        SectionCard(accent = AppColors.ActivityCyan, glowAlpha = 0.20f) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Effort", style = MaterialTheme.typography.titleMedium)
-                StatusPill(effort.label, AppColors.Strain)
+                StatusPill(effort.label, AppColors.ActivityCyan)
             }
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    state.strainValue?.let { "%.1f".format(it) } ?: "—",
-                    fontSize = 64.sp,
-                    lineHeight = 66.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = AppColors.Strain
-                )
-                state.strainValue?.let {
-                    Text(
-                        "/ 21",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = AppColors.TextSecondary,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                CircularGauge(
+                    value = state.strainValue?.toFloat() ?: 0f,
+                    maxValue = 21f,
+                    color = AppColors.ActivityCyan,
+                    strokeWidth = 10.dp,
+                    modifier = Modifier.size(138.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            state.strainValue?.let { "%.1f".format(it) } ?: "—",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = AppColors.ActivityCyan
+                        )
+                        state.strainValue?.let {
+                            Text(
+                                "/21",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AppColors.TextSecondary,
+                                modifier = Modifier.padding(bottom = 5.dp)
+                            )
+                        }
+                    }
                 }
+                Text(
+                    effort.message,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
-            Text(effort.message, style = MaterialTheme.typography.bodyLarge)
         }
 
         SectionCard(title = "Training load") {
@@ -126,25 +145,14 @@ fun ActivityScreen(viewModel: ActivityViewModel) {
                 modifier = Modifier.weight(1f)
             )
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            MetricTile(
-                label = "Stress",
-                value = state.stressValue?.let { "%.1f".format(it) } ?: "—",
-                unit = "/ 3",
-                accent = stressColor(state.stressValue),
-                modifier = Modifier.weight(1f)
-            )
-            MetricTile(
-                label = "Heart rate",
-                value = state.latestHeartRateBpm?.toString() ?: "—",
-                unit = "bpm",
-                accent = AppColors.HeartRate,
-                modifier = Modifier.weight(1f)
-            )
-        }
+        MetricTile(
+            label = "Heart rate",
+            value = state.latestHeartRateBpm?.toString() ?: "—",
+            unit = "bpm",
+            accent = AppColors.HeartRate,
+            glowAlpha = 0.10f,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         SectionCard(title = "Activity timeline") {
             ActivityTimeline(state.hourlySteps)
@@ -246,11 +254,4 @@ private fun rangeLabel(range: ActivityRange): String = when (range) {
     ActivityRange.WEEK -> "7 days"
     ActivityRange.MONTH -> "30 days"
     ActivityRange.QUARTER -> "90 days"
-}
-
-private fun stressColor(stress: Double?): Color = when {
-    stress == null -> AppColors.TextMuted
-    stress < 1.0 -> AppColors.Recovery
-    stress < 2.0 -> AppColors.Warning
-    else -> AppColors.Danger
 }

@@ -32,6 +32,7 @@ import com.esusic.recoverytracker.ui.common.SectionCard
 import com.esusic.recoverytracker.ui.common.StatusPill
 import com.esusic.recoverytracker.ui.presentation.sleepStatus
 import com.esusic.recoverytracker.ui.theme.AppColors
+import com.esusic.recoverytracker.ui.today.CircularGauge
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -175,7 +176,7 @@ fun SleepScreen(viewModel: SleepViewModel) {
 @Composable
 private fun SleepHero(state: SleepUiState, total: Long) {
     val status = sleepStatus(state.sleepPerformance)
-    SectionCard {
+    SectionCard(accent = AppColors.SleepViolet, glowAlpha = 0.22f) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -184,34 +185,54 @@ private fun SleepHero(state: SleepUiState, total: Long) {
             StatusPill(status.label, AppColors.SleepViolet)
             state.durationDelta?.let { DeltaChip(it, "min") }
         }
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                state.sleepPerformance?.toString() ?: "—",
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = AppColors.SleepViolet
-            )
-            state.sleepPerformance?.let {
-                Text(
-                    "%",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = AppColors.TextSecondary,
-                    modifier = Modifier.padding(bottom = 7.dp)
-                )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            CircularGauge(
+                value = state.sleepPerformance?.toFloat() ?: 0f,
+                maxValue = 100f,
+                color = AppColors.SleepViolet,
+                strokeWidth = 10.dp,
+                modifier = Modifier.size(126.dp)
+            ) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        state.sleepPerformance?.toString() ?: "—",
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = AppColors.SleepViolet
+                    )
+                    state.sleepPerformance?.let {
+                        Text(
+                            "%",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = AppColors.TextSecondary,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                    }
+                }
             }
-        }
-        Text(
-            formatSleepMinutes(total),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.ExtraBold
-        )
-        if (state.sessionStart != null && state.sessionEnd != null) {
-            val formatter = sleepTimeFormatter.withZone(ZoneId.systemDefault())
-            Text(
-                "${formatter.format(state.sessionStart)} – ${formatter.format(state.sessionEnd)}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = AppColors.TextSecondary
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                Text(
+                    formatSleepMinutes(total),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = AppColors.TextPrimary
+                )
+                if (state.sessionStart != null && state.sessionEnd != null) {
+                    val formatter = sleepTimeFormatter.withZone(ZoneId.systemDefault())
+                    Text(
+                        "${formatter.format(state.sessionStart)} – ${formatter.format(state.sessionEnd)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AppColors.TextSecondary
+                    )
+                }
+            }
         }
         Text(status.message, style = MaterialTheme.typography.bodyLarge)
     }

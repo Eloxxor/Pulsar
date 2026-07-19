@@ -174,7 +174,7 @@ class TodayViewModelTest {
     }
 
     @Test
-    fun `uiState exposes hourly steps heart-rate spark and stress for the metric grid`() = runTest {
+    fun `uiState exposes hourly steps heart-rate spark and zone minutes`() = runTest {
         val zone = java.time.ZoneId.systemDefault()
         val today = LocalDate.now()
         val nine = today.atTime(9, 0).atZone(zone).toInstant()
@@ -195,7 +195,6 @@ class TodayViewModelTest {
         assertEquals(500, viewModel.uiState.value.hourlySteps[9])
         assertEquals(300, viewModel.uiState.value.hourlySteps[14])
         assertTrue(viewModel.uiState.value.heartRateSpark.isNotEmpty())
-        assertNotNull(viewModel.uiState.value.stressValue)
         assertNotNull(viewModel.uiState.value.zoneMinutes)
     }
 

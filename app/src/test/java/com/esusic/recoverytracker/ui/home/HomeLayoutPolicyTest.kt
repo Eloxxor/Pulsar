@@ -23,13 +23,4 @@ class HomeLayoutPolicyTest {
             readinessLayoutFor(maxWidthDp = 371, fontScale = 1.3f)
         )
     }
-
-    @Test
-    fun `sleep stage summary omits unknown zero-only detail`() {
-        assertEquals("", sleepStageSummaryFor(deep = 0, rem = 0, light = 0))
-        assertEquals(
-            "REM 1h 30m",
-            sleepStageSummaryFor(deep = 0, rem = 90, light = null)
-        )
-    }
 }

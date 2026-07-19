@@ -61,7 +61,6 @@ data class TodayUiState(
     val recoveryHistory: List<ChartPoint> = emptyList(),
     val sleepPerformanceHistory: List<ChartPoint> = emptyList(),
     val strainHistory: List<ChartPoint> = emptyList(),
-    val stressValue: Double? = null,
     val zoneMinutes: Int? = null,
     val zoneMinutesYesterday: Int? = null,
     val hourlySteps: List<Int> = List(24) { 0 },
@@ -214,7 +213,6 @@ class TodayViewModel(
                     s.sleepPerformance?.let { ChartPoint(LocalDate.parse(s.date), it.toFloat()) }
                 },
                 strainHistory = ascendingScores.map { ChartPoint(LocalDate.parse(it.date), it.strainValue.toFloat()) },
-                stressValue = score?.stressValue,
                 zoneMinutes = score?.zoneMinutes,
                 zoneMinutesYesterday = scores.find { it.date == selectedDate.minusDays(1).toString() }?.zoneMinutes,
                 hourlySteps = hourly.toList(),

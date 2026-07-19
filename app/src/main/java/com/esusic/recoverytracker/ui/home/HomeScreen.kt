@@ -133,26 +133,6 @@ fun HomeScreen(
                 )
             }
 
-            SectionCard(
-                title = "Last night",
-                modifier = Modifier
-                    .semantics { contentDescription = "Last night card" }
-                    .clickable(onClick = onOpenSleep)
-            ) {
-                Text(
-                    state.sleepDurationMinutes?.let(::formatMinutes) ?: "No sleep recorded",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = AppColors.SleepViolet
-                )
-                val stages = sleepStageSummary(state)
-                Text(
-                    stages.ifEmpty { "Stage detail is not available for this night." },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AppColors.TextSecondary
-                )
-            }
-
             SectionCard(title = "Today's recommendation") {
                 Text(
                     todayRecommendation(
@@ -206,7 +186,6 @@ fun HomeScreen(
                 VitalLine("SpO₂", state.avgOxygenSaturationPercent?.let { "%.0f%%".format(it) } ?: "—", state.spo2Delta, "pp")
                 VitalLine("Skin temperature", state.avgSkinTemperatureDeltaCelsius?.let { "%+.1f°C".format(it) } ?: "—", state.skinTempDelta, "°C")
                 VitalLine("Steps", state.steps?.toString() ?: "—", null, "")
-                VitalLine("Stress", state.stressValue?.let { "%.1f / 3".format(it) } ?: "—", null, "")
                 VitalLine("Zone minutes", state.zoneMinutes?.let { "$it min" } ?: "—", null, "")
             }
 
@@ -255,18 +234,6 @@ private fun VitalLine(label: String, value: String, delta: MetricDelta?, unit: S
         }
     }
 }
-
-private fun sleepStageSummary(state: TodayUiState): String = sleepStageSummaryFor(
-    deep = state.deepSleepMinutes,
-    rem = state.remSleepMinutes,
-    light = state.lightSleepMinutes
-)
-
-internal fun sleepStageSummaryFor(deep: Long?, rem: Long?, light: Long?): String = buildList {
-    deep?.takeIf { it > 0 }?.let { add("Deep ${formatMinutes(it)}") }
-    rem?.takeIf { it > 0 }?.let { add("REM ${formatMinutes(it)}") }
-    light?.takeIf { it > 0 }?.let { add("Light ${formatMinutes(it)}") }
-}.joinToString("  ·  ")
 
 private fun vitalAgeContext(state: TodayUiState): String {
     val vital = state.vitalAge ?: return "A few days of consistent data are needed."

@@ -1,6 +1,5 @@
 package com.esusic.recoverytracker.ui.home
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -24,12 +25,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.esusic.recoverytracker.ui.common.StatusPill
+import com.esusic.recoverytracker.ui.common.neonSurface
 import com.esusic.recoverytracker.ui.presentation.effortStatus
 import com.esusic.recoverytracker.ui.presentation.recoveryStatus
 import com.esusic.recoverytracker.ui.presentation.sleepStatus
 import com.esusic.recoverytracker.ui.presentation.todayRecommendation
 import com.esusic.recoverytracker.ui.theme.AppColors
 import com.esusic.recoverytracker.ui.today.TodayUiState
+import com.esusic.recoverytracker.ui.today.CircularGauge
 
 enum class ReadinessLayout { ASYMMETRIC, STACKED }
 
@@ -107,12 +110,15 @@ private fun RecoveryHeroCard(
     modifier: Modifier = Modifier
 ) {
     val status = recoveryStatus(state.recoveryValue, state.isCalibrating)
+    val accent = recoveryColor(state.recoveryValue)
+    val shape = RoundedCornerShape(26.dp)
     Card(
         onClick = onClick,
-        modifier = modifier.semantics { contentDescription = "Recovery card" },
-        shape = RoundedCornerShape(26.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
-        border = BorderStroke(1.dp, AppColors.GridLine)
+        modifier = modifier
+            .neonSurface(shape, accent, glowAlpha = 0.24f)
+            .semantics { contentDescription = "Recovery card" },
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Column(
             modifier = Modifier.fillMaxHeight().padding(20.dp),
@@ -122,29 +128,38 @@ private fun RecoveryHeroCard(
                 Text(
                     "Recovery",
                     style = MaterialTheme.typography.titleMedium,
-                    color = AppColors.TextSecondary
+                    color = accent
                 )
-                StatusPill(status.label, recoveryColor(state.recoveryValue))
+                StatusPill(status.label, accent)
             }
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = when {
-                        state.isCalibrating -> "…"
-                        state.recoveryValue != null -> state.recoveryValue.toString()
-                        else -> "—"
-                    },
-                    fontSize = 62.sp,
-                    lineHeight = 62.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = recoveryColor(state.recoveryValue)
-                )
-                if (!state.isCalibrating && state.recoveryValue != null) {
+            CircularGauge(
+                value = state.recoveryValue?.toFloat() ?: 0f,
+                maxValue = 100f,
+                color = accent,
+                isIndeterminate = state.isCalibrating,
+                strokeWidth = 10.dp,
+                modifier = Modifier.size(150.dp).align(Alignment.CenterHorizontally)
+            ) {
+                Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        "%",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = AppColors.TextSecondary,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        text = when {
+                            state.isCalibrating -> "…"
+                            state.recoveryValue != null -> state.recoveryValue.toString()
+                            else -> "—"
+                        },
+                        fontSize = 48.sp,
+                        lineHeight = 50.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = accent
                     )
+                    if (!state.isCalibrating && state.recoveryValue != null) {
+                        Text(
+                            "%",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = AppColors.TextSecondary,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                    }
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -181,7 +196,7 @@ private fun EffortCard(
         unit = if (state.strainValue != null) "/ 21" else null,
         status = status.label,
         supporting = status.message,
-        accent = AppColors.Strain,
+        accent = AppColors.ActivityCyan,
         semanticsLabel = "Effort card",
         onClick = onClick,
         modifier = modifier
@@ -220,12 +235,14 @@ private fun CompactReadinessCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val shape = RoundedCornerShape(24.dp)
     Card(
         onClick = onClick,
-        modifier = modifier.semantics { contentDescription = semanticsLabel },
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
-        border = BorderStroke(1.dp, AppColors.GridLine)
+        modifier = modifier
+            .neonSurface(shape, accent, glowAlpha = 0.18f)
+            .semantics { contentDescription = semanticsLabel },
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Column(
             modifier = Modifier.fillMaxHeight().padding(16.dp),
@@ -236,7 +253,7 @@ private fun CompactReadinessCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(label, style = MaterialTheme.typography.titleMedium)
+                Text(label, style = MaterialTheme.typography.titleMedium, color = accent)
                 StatusPill(status, accent)
             }
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -160,20 +160,21 @@ private fun BreakdownCard(result: VitalAgeResult) {
 
 @Composable
 private fun ComponentRow(label: String, component: VitalAgeComponent?) {
+    val presentation = vitalAgeComponentPresentation(label, component)
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
             Text(
-                if (component != null) {
-                    "$label · ${(component.weight * 100).roundToInt()}% weight · " +
-                        "${(component.confidence * 100).roundToInt()}% confidence"
-                } else {
-                    label
-                },
+                presentation.label,
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodySmall,
                 color = AppColors.TextSecondary
             )
             Text(
-                component?.let { "%+.1f yr impact".format(it.impactYears) } ?: "not enough data",
+                presentation.impact,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold,
                 color = when {
@@ -184,9 +185,34 @@ private fun ComponentRow(label: String, component: VitalAgeComponent?) {
                 }
             )
         }
+        presentation.metadata?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.labelSmall,
+                color = AppColors.TextMuted
+            )
+        }
         DivergingBar(component?.impactYears)
     }
 }
+
+internal data class VitalAgeComponentPresentation(
+    val label: String,
+    val metadata: String?,
+    val impact: String
+)
+
+internal fun vitalAgeComponentPresentation(
+    label: String,
+    component: VitalAgeComponent?
+): VitalAgeComponentPresentation = VitalAgeComponentPresentation(
+    label = label,
+    metadata = component?.let {
+        "${(it.weight * 100).roundToInt()}% weight · " +
+            "${(it.confidence * 100).roundToInt()}% confidence"
+    },
+    impact = component?.let { "%+.1f yr impact".format(it.impactYears) } ?: "not enough data"
+)
 
 @Composable
 private fun DivergingBar(offsetYears: Double?) {

@@ -85,17 +85,17 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
                     )
                 } else {
                     val total = latest.sleepDurationMinutes
-                    val deep = latest.deepSleepMinutes ?: 0L
-                    val rem = latest.remSleepMinutes ?: 0L
-                    val light = latest.lightSleepMinutes ?: 0L
+                    val deep = latest.deepSleepMinutes
+                    val rem = latest.remSleepMinutes
+                    val light = latest.lightSleepMinutes
                     _uiState.value = _uiState.value.copy(
                         totalMinutes = total,
                         deepMinutes = deep,
                         remMinutes = rem,
                         lightMinutes = light,
-                        deepPercent = deep.toFloat() / total,
-                        remPercent = rem.toFloat() / total,
-                        lightPercent = light.toFloat() / total,
+                        deepPercent = deep?.toFloat()?.div(total) ?: 0f,
+                        remPercent = rem?.toFloat()?.div(total) ?: 0f,
+                        lightPercent = light?.toFloat()?.div(total) ?: 0f,
                         typicalTotalMinutes = typical,
                         durationDelta = metricDelta(
                             total.toDouble(),
@@ -116,14 +116,25 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
                             .find { it.date == latest.date }?.sleepPerformance
                         if (detail != null) {
                             val inBed = java.time.Duration.between(detail.session.start, detail.session.end).toMinutes()
+                            val hasStageDetail = detail.session.stages.isNotEmpty()
+                            val awakeMinutes = detail.session.stages
+                                .filter { it.stage == SleepStageType.AWAKE }
+                                .sumOf {
+                                    java.time.Duration.between(it.start, it.end).toMinutes()
+                                }
                             _uiState.value = _uiState.value.copy(
                                 heartRateBuckets = bucketHeartRateSamples(detail.heartRateSamples, detail.session.start),
                                 stagePeriods = detail.session.stages,
                                 sessionStart = detail.session.start,
                                 sessionEnd = detail.session.end,
                                 inBedMinutes = inBed,
-                                awakeMinutes = (inBed - (deep + rem + light)).coerceAtLeast(0L),
-                                wakeEvents = detail.session.stages.count { it.stage == SleepStageType.AWAKE },
+                                deepMinutes = deep.takeIf { hasStageDetail },
+                                remMinutes = rem.takeIf { hasStageDetail },
+                                lightMinutes = light.takeIf { hasStageDetail },
+                                awakeMinutes = awakeMinutes.takeIf { hasStageDetail },
+                                wakeEvents = detail.session.stages
+                                    .count { it.stage == SleepStageType.AWAKE }
+                                    .takeIf { hasStageDetail },
                                 needMinutes = need,
                                 sleepPerformance = performance
                             )

@@ -256,10 +256,16 @@ private fun VitalLine(label: String, value: String, delta: MetricDelta?, unit: S
     }
 }
 
-private fun sleepStageSummary(state: TodayUiState): String = buildList {
-    state.deepSleepMinutes?.let { add("Deep ${formatMinutes(it)}") }
-    state.remSleepMinutes?.let { add("REM ${formatMinutes(it)}") }
-    state.lightSleepMinutes?.let { add("Light ${formatMinutes(it)}") }
+private fun sleepStageSummary(state: TodayUiState): String = sleepStageSummaryFor(
+    deep = state.deepSleepMinutes,
+    rem = state.remSleepMinutes,
+    light = state.lightSleepMinutes
+)
+
+internal fun sleepStageSummaryFor(deep: Long?, rem: Long?, light: Long?): String = buildList {
+    deep?.takeIf { it > 0 }?.let { add("Deep ${formatMinutes(it)}") }
+    rem?.takeIf { it > 0 }?.let { add("REM ${formatMinutes(it)}") }
+    light?.takeIf { it > 0 }?.let { add("Light ${formatMinutes(it)}") }
 }.joinToString("  ·  ")
 
 private fun vitalAgeContext(state: TodayUiState): String {

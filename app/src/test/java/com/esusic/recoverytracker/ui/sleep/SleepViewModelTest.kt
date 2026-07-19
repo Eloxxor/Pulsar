@@ -24,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -246,5 +247,48 @@ class SleepViewModelTest {
             LocalDate.of(2026, 7, 11),
             viewModel.uiState.value.weeklyNights.first().date
         )
+    }
+
+    @Test
+    fun `duration only sleep keeps unavailable stages unknown`() = runTest {
+        val synchronousExecutor = Executor { it.run() }
+        val db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        )
+            .setQueryExecutor(synchronousExecutor)
+            .setTransactionExecutor(synchronousExecutor)
+            .allowMainThreadQueries()
+            .build()
+        val userPreferences = UserPreferencesRepository(
+            PreferenceDataStoreFactory.create(
+                scope = CoroutineScope(UnconfinedTestDispatcher())
+            ) {
+                tempFolder.newFile("duration-only.preferences_pb")
+            }
+        )
+        val start = Instant.parse("2026-07-13T00:00:00Z")
+        val source = FakeHealthDataSource(
+            sleep = listOf(
+                SleepSession(start, start.plus(420, ChronoUnit.MINUTES), emptyList())
+            )
+        )
+        val repository = HealthRepository(
+            AggregationService(source),
+            db.dailyScoreDao(),
+            db.dailyAggregateDao(),
+            userPreferences
+        )
+        repository.syncDate(LocalDate.of(2026, 7, 13))
+
+        val viewModel = SleepViewModel(repository)
+        val state = viewModel.uiState.filter { it.sessionStart != null }.first()
+
+        assertEquals(420L, state.totalMinutes)
+        assertNull(state.deepMinutes)
+        assertNull(state.remMinutes)
+        assertNull(state.lightMinutes)
+        assertNull(state.awakeMinutes)
+        assertNull(state.wakeEvents)
     }
 }

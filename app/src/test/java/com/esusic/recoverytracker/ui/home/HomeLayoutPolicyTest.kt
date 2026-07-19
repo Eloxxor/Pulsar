@@ -8,7 +8,7 @@ class HomeLayoutPolicyTest {
     fun `readiness cards keep asymmetric layout on the connected phone size`() {
         assertEquals(
             ReadinessLayout.ASYMMETRIC,
-            readinessLayoutFor(maxWidthDp = 411, fontScale = 1f)
+            readinessLayoutFor(maxWidthDp = 371, fontScale = 1f)
         )
     }
 
@@ -16,11 +16,11 @@ class HomeLayoutPolicyTest {
     fun `readiness cards stack on small phones and with large text`() {
         assertEquals(
             ReadinessLayout.STACKED,
-            readinessLayoutFor(maxWidthDp = 375, fontScale = 1f)
+            readinessLayoutFor(maxWidthDp = 335, fontScale = 1f)
         )
         assertEquals(
             ReadinessLayout.STACKED,
-            readinessLayoutFor(maxWidthDp = 411, fontScale = 1.3f)
+            readinessLayoutFor(maxWidthDp = 371, fontScale = 1.3f)
         )
     }
 

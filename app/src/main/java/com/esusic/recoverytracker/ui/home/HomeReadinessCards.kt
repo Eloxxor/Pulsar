@@ -34,7 +34,7 @@ import com.esusic.recoverytracker.ui.today.TodayUiState
 enum class ReadinessLayout { ASYMMETRIC, STACKED }
 
 internal fun readinessLayoutFor(maxWidthDp: Int, fontScale: Float): ReadinessLayout =
-    if (maxWidthDp < 400 || fontScale > 1.15f) {
+    if (maxWidthDp < 350 || fontScale > 1.15f) {
         ReadinessLayout.STACKED
     } else {
         ReadinessLayout.ASYMMETRIC

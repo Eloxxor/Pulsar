@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.esusic.recoverytracker.model.SleepStageType
 import com.esusic.recoverytracker.ui.common.DeltaChip
+import com.esusic.recoverytracker.ui.common.DetailTopBar
 import com.esusic.recoverytracker.ui.common.Eyebrow
 import com.esusic.recoverytracker.ui.common.SectionCard
 import com.esusic.recoverytracker.ui.theme.AppColors
@@ -37,7 +38,7 @@ import kotlin.math.roundToInt
 private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 @Composable
-fun SleepScreen(viewModel: SleepViewModel) {
+fun SleepScreen(viewModel: SleepViewModel, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
     val zone = ZoneId.systemDefault()
 
@@ -45,6 +46,8 @@ fun SleepScreen(viewModel: SleepViewModel) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        DetailTopBar("Sleep", onBack)
+
         Column {
             val sessionStart = uiState.sessionStart
             val sessionEnd = uiState.sessionEnd
@@ -55,7 +58,6 @@ fun SleepScreen(viewModel: SleepViewModel) {
             } else {
                 Eyebrow("Last night")
             }
-            Text("Sleep", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         }
 
         val total = uiState.totalMinutes

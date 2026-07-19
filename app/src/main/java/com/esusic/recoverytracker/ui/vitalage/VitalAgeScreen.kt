@@ -34,6 +34,7 @@ import com.esusic.recoverytracker.scoring.VitalAgeComponent
 import com.esusic.recoverytracker.scoring.VitalAgeResult
 import com.esusic.recoverytracker.ui.common.ChartPoint
 import com.esusic.recoverytracker.ui.common.DeltaChip
+import com.esusic.recoverytracker.ui.common.DetailTopBar
 import com.esusic.recoverytracker.ui.common.Eyebrow
 import com.esusic.recoverytracker.ui.common.MetricLineChart
 import com.esusic.recoverytracker.ui.common.SectionCard
@@ -43,7 +44,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @Composable
-fun VitalAgeScreen(viewModel: VitalAgeViewModel) {
+fun VitalAgeScreen(viewModel: VitalAgeViewModel, onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
 
     Column(
@@ -53,7 +54,7 @@ fun VitalAgeScreen(viewModel: VitalAgeViewModel) {
             .padding(horizontal = 20.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        Eyebrow("Vital age")
+        DetailTopBar("Vital age", onBack)
 
         val result = uiState.result
         when {

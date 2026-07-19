@@ -1,5 +1,6 @@
 package com.esusic.recoverytracker.ui.today
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,16 +13,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +39,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,7 +60,12 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit, onMetricClick: (MetricType) -> Unit) {
+fun TodayScreen(
+    viewModel: TodayViewModel,
+    onMetricClick: (MetricType) -> Unit,
+    onOpenSleep: () -> Unit,
+    onOpenAge: () -> Unit
+) {
     val uiState by viewModel.uiState.collectAsState()
     val pullRefreshState = rememberPullRefreshState(uiState.isRefreshing, { viewModel.refresh() })
     var openSheet by remember { mutableStateOf<GaugeSheet?>(null) }
@@ -68,37 +80,25 @@ fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit, onMetricC
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { viewModel.goToPreviousDay() }, enabled = uiState.canGoBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Previous day",
-                            tint = if (uiState.canGoBack) AppColors.TextSecondary else AppColors.TextMuted
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Eyebrow(uiState.selectedDate.format(DateTimeFormatter.ofPattern("EEEE · MMM d", Locale.ENGLISH)))
-                        Text(
-                            when {
-                                uiState.isToday -> "Today"
-                                uiState.selectedDate == LocalDate.now().minusDays(1) -> "Yesterday"
-                                else -> uiState.selectedDate.format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH))
-                            },
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    IconButton(onClick = { viewModel.goToNextDay() }, enabled = uiState.canGoForward) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Next day",
-                            tint = if (uiState.canGoForward) AppColors.TextSecondary else AppColors.TextMuted
-                        )
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(AppColors.Recovery))
+                    Text(
+                        "Recovery Tracker",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-                IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = AppColors.TextSecondary)
-                }
+                DatePill(
+                    label = when {
+                        uiState.isToday -> "Today"
+                        uiState.selectedDate == LocalDate.now().minusDays(1) -> "Yesterday"
+                        else -> uiState.selectedDate.format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.ENGLISH))
+                    },
+                    canGoBack = uiState.canGoBack,
+                    canGoForward = uiState.canGoForward,
+                    onPrev = { viewModel.goToPreviousDay() },
+                    onNext = { viewModel.goToNextDay() }
+                )
             }
 
             if (!uiState.hasAllPermissions) {
@@ -111,63 +111,71 @@ fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit, onMetricC
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                GaugeColumn(label = "Sleep", caption = null, onClick = { openSheet = GaugeSheet.SLEEP }) {
-                    CircularGauge(
-                        value = (uiState.sleepPerformance ?: 0).toFloat(),
-                        maxValue = 100f,
-                        color = AppColors.SleepViolet,
-                        modifier = Modifier.size(90.dp)
-                    ) {
-                        Text(
-                            text = uiState.sleepPerformance?.let { "$it%" } ?: "--",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                GaugeColumn(
+                RingColumn(
+                    label = "Sleep",
+                    icon = Icons.Filled.Bedtime,
+                    color = AppColors.SleepViolet,
+                    value = (uiState.sleepPerformance ?: 0).toFloat(),
+                    maxValue = 100f,
+                    centerText = uiState.sleepPerformance?.let { "$it%" } ?: "--",
+                    onClick = onOpenSleep
+                )
+                RingColumn(
                     label = "Recovery",
-                    caption = if (uiState.isCalibrating) null else recoveryStatusLabel(uiState.recoveryValue),
-                    captionColor = recoveryColor(uiState.recoveryValue),
+                    icon = Icons.Filled.Favorite,
+                    color = recoveryColor(uiState.recoveryValue),
+                    value = (uiState.recoveryValue ?: 0).toFloat(),
+                    maxValue = 100f,
+                    centerText = when {
+                        uiState.isCalibrating -> "…"
+                        uiState.recoveryValue != null -> "${uiState.recoveryValue}"
+                        else -> "--"
+                    },
+                    isIndeterminate = uiState.isCalibrating,
                     onClick = { openSheet = GaugeSheet.RECOVERY }
-                ) {
-                    CircularGauge(
-                        value = (uiState.recoveryValue ?: 0).toFloat(),
-                        maxValue = 100f,
-                        color = recoveryColor(uiState.recoveryValue),
-                        isIndeterminate = uiState.isCalibrating,
-                        modifier = Modifier.size(148.dp)
-                    ) {
-                        Text(
-                            text = when {
-                                uiState.isCalibrating -> "Calibrating"
-                                uiState.recoveryValue != null -> "${uiState.recoveryValue}"
-                                else -> "--"
-                            },
-                            style = if (uiState.isCalibrating) MaterialTheme.typography.bodySmall else MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
+                )
+                RingColumn(
+                    label = "Strain",
+                    icon = Icons.Filled.Bolt,
+                    color = AppColors.Strain,
+                    value = (uiState.strainValue ?: 0.0).toFloat(),
+                    maxValue = 21f,
+                    centerText = uiState.strainValue?.let { "%.1f".format(it) } ?: "--",
+                    onClick = { openSheet = GaugeSheet.STRAIN }
+                )
+            }
 
-                GaugeColumn(label = "Strain", caption = null, onClick = { openSheet = GaugeSheet.STRAIN }) {
-                    CircularGauge(
-                        value = (uiState.strainValue ?: 0.0).toFloat(),
-                        maxValue = 21f,
-                        color = AppColors.Strain,
-                        modifier = Modifier.size(90.dp)
-                    ) {
-                        Text(
-                            text = uiState.strainValue?.let { "%.1f".format(it) } ?: "--",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                HeartRateCard(
+                    bpm = uiState.latestHeartRateBpm,
+                    spark = uiState.heartRateSpark,
+                    restingHr = uiState.restingHeartRate,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onMetricClick(MetricType.HEART_RATE) }
+                )
+                StepsCard(
+                    steps = uiState.steps,
+                    hourlySteps = uiState.hourlySteps,
+                    stepsLast6h = uiState.stepsLast6h,
+                    isToday = uiState.isToday,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onMetricClick(MetricType.ACTIVITY) }
+                )
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ZoneMinutesCard(
+                    minutes = uiState.zoneMinutes,
+                    yesterday = uiState.zoneMinutesYesterday,
+                    modifier = Modifier.weight(1f)
+                )
+                StressCard(
+                    stress = uiState.stressValue,
+                    restingHr = uiState.restingHeartRate,
+                    nowBpm = uiState.latestHeartRateBpm,
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             SectionCard(title = "Vitals") {
@@ -191,34 +199,44 @@ fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit, onMetricC
             }
 
             SectionCard(title = "Sleep") {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenSleep),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Bedtime, contentDescription = null, tint = AppColors.SleepViolet)
+                    Spacer(Modifier.width(12.dp))
                     Text(
                         uiState.sleepDurationMinutes?.let { "${it / 60}h ${it % 60}m" } ?: "No sleep data yet",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold
                     )
+                    Spacer(Modifier.width(10.dp))
                     DeltaChip(uiState.sleepDelta, "min")
-                }
-            }
-
-            SectionCard(title = "Activity") {
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable { onMetricClick(MetricType.ACTIVITY) },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null, tint = AppColors.Strain)
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        uiState.steps?.toString() ?: "--",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text("steps", style = MaterialTheme.typography.bodyMedium, color = AppColors.TextSecondary)
                     Spacer(Modifier.weight(1f))
                     Icon(
                         Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Open steps detail",
+                        contentDescription = "Open sleep detail",
+                        tint = AppColors.TextMuted
+                    )
+                }
+            }
+
+            SectionCard(title = "Vital age") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenAge),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Cake, contentDescription = null, tint = AppColors.VitalAge)
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        uiState.vitalAge?.let { "%.1f yrs".format(it) } ?: "Calibrating",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Open vital age",
                         tint = AppColors.TextMuted
                     )
                 }
@@ -252,21 +270,77 @@ fun TodayScreen(viewModel: TodayViewModel, onOpenSettings: () -> Unit, onMetricC
 }
 
 @Composable
-private fun GaugeColumn(
+private fun DatePill(
     label: String,
-    caption: String?,
+    canGoBack: Boolean,
+    canGoForward: Boolean,
+    onPrev: () -> Unit,
+    onNext: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surface),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onPrev, enabled = canGoBack, modifier = Modifier.size(32.dp)) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Previous day",
+                tint = if (canGoBack) AppColors.TextSecondary else AppColors.TextMuted
+            )
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 2.dp)
+        )
+        IconButton(onClick = onNext, enabled = canGoForward, modifier = Modifier.size(32.dp)) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Next day",
+                tint = if (canGoForward) AppColors.TextSecondary else AppColors.TextMuted
+            )
+        }
+    }
+}
+
+@Composable
+private fun RingColumn(
+    label: String,
+    icon: ImageVector,
+    color: Color,
+    value: Float,
+    maxValue: Float,
+    centerText: String,
     onClick: () -> Unit,
-    captionColor: Color = AppColors.TextSecondary,
-    gauge: @Composable () -> Unit
+    isIndeterminate: Boolean = false
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.clickable(onClick = onClick)
     ) {
-        gauge()
-        Eyebrow(label)
-        caption?.let { Text(it, fontSize = 12.sp, color = captionColor, fontWeight = FontWeight.SemiBold) }
+        CircularGauge(
+            value = value,
+            maxValue = maxValue,
+            color = color,
+            isIndeterminate = isIndeterminate,
+            strokeWidth = 8.dp,
+            modifier = Modifier.size(104.dp)
+        ) {
+            Text(
+                text = centerText,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Icon(icon, contentDescription = null, tint = AppColors.TextSecondary, modifier = Modifier.size(13.dp))
+            Text(label, fontSize = 12.sp, color = AppColors.TextSecondary)
+        }
     }
 }
 

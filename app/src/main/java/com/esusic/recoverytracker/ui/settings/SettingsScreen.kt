@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.HealthConnectClient
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen() {
     val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -28,7 +28,5 @@ fun SettingsScreen(onBack: () -> Unit) {
         }
 
         Text("Recovery Tracker v1.0", style = MaterialTheme.typography.bodySmall)
-
-        Button(onClick = onBack) { Text("Back") }
     }
 }

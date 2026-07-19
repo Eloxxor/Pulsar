@@ -2,9 +2,8 @@ package com.esusic.recoverytracker.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bedtime
-import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -23,10 +22,9 @@ import androidx.navigation.compose.rememberNavController
 private data class BottomTab(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
 private val bottomTabs = listOf(
-    BottomTab("today", "Today", Icons.Filled.Home),
+    BottomTab("today", "Overview", Icons.Filled.Home),
     BottomTab("trends", "Trends", Icons.Filled.ShowChart),
-    BottomTab("sleep", "Sleep", Icons.Filled.Bedtime),
-    BottomTab("age", "Age", Icons.Filled.Cake)
+    BottomTab("settings", "Settings", Icons.Filled.Settings)
 )
 
 @Composable
@@ -84,8 +82,9 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                 }
                 com.esusic.recoverytracker.ui.today.TodayScreen(
                     viewModel,
-                    onOpenSettings = { navController.navigate("settings") },
-                    onMetricClick = { metricType -> navController.navigate("detail/${metricType.name}") }
+                    onMetricClick = { metricType -> navController.navigate("detail/${metricType.name}") },
+                    onOpenSleep = { navController.navigate("sleep") },
+                    onOpenAge = { navController.navigate("age") }
                 )
             }
             composable("trends") {
@@ -98,7 +97,7 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                 val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<com.esusic.recoverytracker.ui.sleep.SleepViewModel> {
                     com.esusic.recoverytracker.ui.sleep.SleepViewModel(com.esusic.recoverytracker.ServiceLocator.repository)
                 }
-                com.esusic.recoverytracker.ui.sleep.SleepScreen(viewModel)
+                com.esusic.recoverytracker.ui.sleep.SleepScreen(viewModel, onBack = { navController.popBackStack() })
             }
             composable("age") {
                 val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<com.esusic.recoverytracker.ui.vitalage.VitalAgeViewModel> {
@@ -107,10 +106,10 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                         com.esusic.recoverytracker.ServiceLocator.userPreferencesRepository
                     )
                 }
-                com.esusic.recoverytracker.ui.vitalage.VitalAgeScreen(viewModel)
+                com.esusic.recoverytracker.ui.vitalage.VitalAgeScreen(viewModel, onBack = { navController.popBackStack() })
             }
             composable("settings") {
-                com.esusic.recoverytracker.ui.settings.SettingsScreen { navController.popBackStack() }
+                com.esusic.recoverytracker.ui.settings.SettingsScreen()
             }
             composable(
                 "detail/{metricType}",

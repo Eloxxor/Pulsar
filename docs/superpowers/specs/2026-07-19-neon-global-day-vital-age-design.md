@@ -168,7 +168,7 @@ For each available component:
 
 `impactYears = rawOffsetYears * normalizedWeight`
 
-The unclamped result delta is the sum of `impactYears`. The final delta is constrained to `[-10, +10]` years, and Vital Age cannot fall below 18. If either constraint changes the total delta, every component impact is scaled proportionally so the displayed impacts still sum exactly to the final delta.
+The calculator is an adult wellness estimate and returns no result when chronological age is below 18. For supported ages, the unclamped result delta is the sum of `impactYears`. The final delta is constrained to `[-10, +10]` years, and Vital Age cannot fall below 18. If either constraint changes the total delta, every component impact is scaled proportionally so the displayed impacts still sum exactly to the final delta.
 
 The public component model exposes the final `impactYears`, normalized weight, confidence, and optionally the raw offset for diagnostics. The product UI displays `impactYears`, not the raw offset.
 

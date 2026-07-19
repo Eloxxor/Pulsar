@@ -1,10 +1,13 @@
 package com.esusic.recoverytracker.ui.detail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,12 +18,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.esusic.recoverytracker.ui.common.Eyebrow
+import com.esusic.recoverytracker.ui.common.DetailTopBar
 import com.esusic.recoverytracker.ui.common.MetricLineChart
 import com.esusic.recoverytracker.ui.common.SectionCard
 import com.esusic.recoverytracker.ui.theme.AppColors
 
 @Composable
-fun MetricDetailScreen(viewModel: MetricDetailViewModel, metricType: MetricType) {
+fun MetricDetailScreen(
+    viewModel: MetricDetailViewModel,
+    metricType: MetricType,
+    onBack: () -> Unit
+) {
     val uiState by viewModel.uiState.collectAsState()
     val color = when (metricType) {
         MetricType.HEART_RATE -> AppColors.Rhr
@@ -28,10 +36,17 @@ fun MetricDetailScreen(viewModel: MetricDetailViewModel, metricType: MetricType)
         MetricType.ACTIVITY -> AppColors.Strain
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColors.Canvas)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        DetailTopBar(metricType.label, onBack)
         Column {
             Eyebrow("Last 30 days")
-            Text(metricType.label, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         }
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(

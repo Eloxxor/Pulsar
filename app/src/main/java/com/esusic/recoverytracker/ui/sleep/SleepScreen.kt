@@ -39,8 +39,7 @@ import kotlin.math.roundToInt
 private val sleepTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 @Composable
-@Suppress("UNUSED_PARAMETER")
-fun SleepScreen(viewModel: SleepViewModel, onBack: (() -> Unit)? = null) {
+fun SleepScreen(viewModel: SleepViewModel) {
     val state by viewModel.uiState.collectAsState()
 
     Column(

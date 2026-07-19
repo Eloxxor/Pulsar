@@ -13,14 +13,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // Resolve the start destination synchronously (before first composition) so a returning,
-        // already-onboarded user goes straight to "today" with no onboarding flash and without
+        // already-onboarded user goes straight to Home with no onboarding flash and without
         // re-triggering an immediate sync on every cold launch. Onboarding is considered complete
         // once a birth year has been saved and Health Connect permissions are currently granted -
         // the same condition OnboardingScreen's own completion LaunchedEffect already uses.
         val startDestination = runBlocking {
             val hasBirthYear = ServiceLocator.userPreferencesRepository.birthYear.first() != null
             val onboardingComplete = hasBirthYear && ServiceLocator.healthDataSource.hasAllPermissions()
-            if (onboardingComplete) "today" else "onboarding"
+            if (onboardingComplete) "home" else "onboarding"
         }
 
         setContent {

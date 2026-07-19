@@ -51,6 +51,8 @@ class TodayViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private lateinit var userPreferences: UserPreferencesRepository
+
     private fun repositoryWith(source: FakeHealthDataSource): HealthRepository {
         // Room's suspend DAO functions dispatch onto its own query/transaction executors by
         // default, which are real background threads outside the UnconfinedTestDispatcher used
@@ -63,7 +65,7 @@ class TodayViewModelTest {
             .setQueryExecutor(synchronousExecutor)
             .setTransactionExecutor(synchronousExecutor)
             .allowMainThreadQueries().build()
-        val userPreferences = UserPreferencesRepository(
+        userPreferences = UserPreferencesRepository(
             PreferenceDataStoreFactory.create(scope = CoroutineScope(UnconfinedTestDispatcher())) {
                 tempFolder.newFile("test.preferences_pb")
             }
@@ -75,7 +77,7 @@ class TodayViewModelTest {
     fun `refresh syncs today and populates uiState from the persisted score`() = runTest {
         val source = FakeHealthDataSource(heartRate = listOf(HeartRateSample(Instant.now(), 65L)))
         val repository = repositoryWith(source)
-        val viewModel = TodayViewModel(repository, source)
+        val viewModel = TodayViewModel(repository, source, userPreferences)
 
         viewModel.refresh()
 
@@ -97,7 +99,7 @@ class TodayViewModelTest {
         val repository = repositoryWith(source)
         repository.syncDate(yesterday)
 
-        val viewModel = TodayViewModel(repository, source)
+        val viewModel = TodayViewModel(repository, source, userPreferences)
         viewModel.refresh()
 
         assertEquals(DeltaKind.BETTER, viewModel.uiState.value.rhrDelta!!.kind)
@@ -118,7 +120,7 @@ class TodayViewModelTest {
         val repository = repositoryWith(source)
         repository.syncDate(yesterday)
 
-        val viewModel = TodayViewModel(repository, source)
+        val viewModel = TodayViewModel(repository, source, userPreferences)
         viewModel.refresh()
         viewModel.selectDate(yesterday)
 
@@ -135,7 +137,7 @@ class TodayViewModelTest {
         val repository = repositoryWith(source)
         repository.syncDate(yesterday)
 
-        val viewModel = TodayViewModel(repository, source)
+        val viewModel = TodayViewModel(repository, source, userPreferences)
         viewModel.refresh()
 
         assertEquals(2, viewModel.uiState.value.strainHistory.size)
@@ -144,9 +146,35 @@ class TodayViewModelTest {
     }
 
     @Test
+    fun `uiState exposes hourly steps heart-rate spark and stress for the metric grid`() = runTest {
+        val zone = java.time.ZoneId.systemDefault()
+        val today = LocalDate.now()
+        val nine = today.atTime(9, 0).atZone(zone).toInstant()
+        val fourteen = today.atTime(14, 0).atZone(zone).toInstant()
+        val source = FakeHealthDataSource(
+            heartRate = (0..5).map { HeartRateSample(nine.plusSeconds(it * 600L), 95L) },
+            restingHr = listOf(RestingHrSample(nine, 60L)),
+            stepsIntervalList = listOf(
+                com.esusic.recoverytracker.model.StepsInterval(nine, nine.plusSeconds(1800), 500),
+                com.esusic.recoverytracker.model.StepsInterval(fourteen, fourteen.plusSeconds(900), 300)
+            )
+        )
+        val repository = repositoryWith(source)
+        val viewModel = TodayViewModel(repository, source, userPreferences)
+
+        viewModel.refresh()
+
+        assertEquals(500, viewModel.uiState.value.hourlySteps[9])
+        assertEquals(300, viewModel.uiState.value.hourlySteps[14])
+        assertTrue(viewModel.uiState.value.heartRateSpark.isNotEmpty())
+        assertNotNull(viewModel.uiState.value.stressValue)
+        assertNotNull(viewModel.uiState.value.zoneMinutes)
+    }
+
+    @Test
     fun `uiState reflects missing permissions without showing a zero score as real`() = runTest {
         val source = FakeHealthDataSource(permissionsGranted = false)
-        val viewModel = TodayViewModel(repositoryWith(source), source)
+        val viewModel = TodayViewModel(repositoryWith(source), source, userPreferences)
 
         viewModel.refresh()
 

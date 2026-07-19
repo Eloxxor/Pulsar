@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.esusic.recoverytracker.data.HealthRepository
 import com.esusic.recoverytracker.data.healthconnect.HealthDataSource
+import com.esusic.recoverytracker.data.prefs.UserPreferencesRepository
 import com.esusic.recoverytracker.model.MetricDelta
 import com.esusic.recoverytracker.model.metricDelta
 import com.esusic.recoverytracker.scoring.BaselineCalculator
+import com.esusic.recoverytracker.scoring.DailyVitals
+import com.esusic.recoverytracker.scoring.VitalAgeSeries
 import com.esusic.recoverytracker.ui.common.ChartPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +17,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 data class TodayUiState(
     val recoveryValue: Int? = null,
@@ -48,12 +54,20 @@ data class TodayUiState(
     val canGoForward: Boolean = false,
     val recoveryHistory: List<ChartPoint> = emptyList(),
     val sleepPerformanceHistory: List<ChartPoint> = emptyList(),
-    val strainHistory: List<ChartPoint> = emptyList()
+    val strainHistory: List<ChartPoint> = emptyList(),
+    val stressValue: Double? = null,
+    val zoneMinutes: Int? = null,
+    val zoneMinutesYesterday: Int? = null,
+    val hourlySteps: List<Int> = List(24) { 0 },
+    val stepsLast6h: Int? = null,
+    val heartRateSpark: List<Float> = emptyList(),
+    val vitalAge: Double? = null
 )
 
 class TodayViewModel(
     private val repository: HealthRepository,
     private val healthDataSource: HealthDataSource,
+    private val userPreferences: UserPreferencesRepository,
     private val clock: Clock = Clock.systemDefaultZone()
 ) : ViewModel() {
 
@@ -111,6 +125,43 @@ class TodayViewModel(
 
             val ascendingScores = scores.sortedBy { it.date }
 
+            // Live Health Connect reads for the mini charts — empty for days outside
+            // the 30-day read window; the cards fall back to number-only.
+            val zone = ZoneId.systemDefault()
+            val dayStart = selectedDate.atStartOfDay(zone).toInstant()
+            val dayEnd = selectedDate.plusDays(1).atStartOfDay(zone).toInstant()
+            val hourly = IntArray(24)
+            runCatching { healthDataSource.stepsIntervals(dayStart, dayEnd) }
+                .getOrDefault(emptyList())
+                .forEach { interval -> hourly[interval.start.atZone(zone).hour] += interval.count }
+            val nowHour = ZonedDateTime.now(clock).hour
+            val stepsLast6h = if (selectedDate == today) {
+                ((nowHour - 5).coerceAtLeast(0)..nowHour).sumOf { hourly[it] }
+            } else {
+                null
+            }
+            val spark = runCatching { healthDataSource.heartRateSamples(dayStart, dayEnd) }
+                .getOrDefault(emptyList())
+                .groupBy { Duration.between(dayStart, it.time).toMinutes() / 30 }
+                .toSortedMap()
+                .values.map { bucket -> bucket.map { it.bpm }.average().toFloat() }
+
+            val birthYear = userPreferences.birthYear.first()
+            val vitalAge = birthYear?.let { year ->
+                val days = aggregates.map { a ->
+                    DailyVitals(
+                        date = LocalDate.parse(a.date),
+                        hrvMillis = a.avgHrvMillis,
+                        restingHr = a.restingHeartRate?.toDouble(),
+                        sleepMinutes = a.sleepDurationMinutes?.toDouble(),
+                        steps = a.steps.takeIf { s -> s > 0 }?.toDouble(),
+                        strain = scores.find { s -> s.date == a.date }?.strainValue
+                    )
+                }
+                VitalAgeSeries.build(days, year, maxHrBpm = userPreferences.maxHeartRate.first())
+                    .lastOrNull()?.second?.vitalAge
+            }
+
             _uiState.value = TodayUiState(
                 recoveryValue = score?.recoveryValue,
                 isCalibrating = score?.recoveryIsCalibrating ?: false,
@@ -145,7 +196,14 @@ class TodayViewModel(
                 sleepPerformanceHistory = ascendingScores.mapNotNull { s ->
                     s.sleepPerformance?.let { ChartPoint(LocalDate.parse(s.date), it.toFloat()) }
                 },
-                strainHistory = ascendingScores.map { ChartPoint(LocalDate.parse(it.date), it.strainValue.toFloat()) }
+                strainHistory = ascendingScores.map { ChartPoint(LocalDate.parse(it.date), it.strainValue.toFloat()) },
+                stressValue = score?.stressValue,
+                zoneMinutes = score?.zoneMinutes,
+                zoneMinutesYesterday = scores.find { it.date == selectedDate.minusDays(1).toString() }?.zoneMinutes,
+                hourlySteps = hourly.toList(),
+                stepsLast6h = stepsLast6h,
+                heartRateSpark = spark,
+                vitalAge = vitalAge
             )
         }
     }

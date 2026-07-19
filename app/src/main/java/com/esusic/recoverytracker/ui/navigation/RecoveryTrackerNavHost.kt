@@ -78,7 +78,8 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                 val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<com.esusic.recoverytracker.ui.today.TodayViewModel> {
                     com.esusic.recoverytracker.ui.today.TodayViewModel(
                         com.esusic.recoverytracker.ServiceLocator.repository,
-                        com.esusic.recoverytracker.ServiceLocator.healthDataSource
+                        com.esusic.recoverytracker.ServiceLocator.healthDataSource,
+                        com.esusic.recoverytracker.ServiceLocator.userPreferencesRepository
                     )
                 }
                 com.esusic.recoverytracker.ui.today.TodayScreen(

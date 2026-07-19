@@ -18,6 +18,14 @@ class HealthStatusPresentationTest {
     }
 
     @Test
+    fun `calibration recommendation stays compact`() {
+        assertEquals(
+            "Keep wearing your tracker to build a reliable baseline.",
+            todayRecommendation(recovery = null, strain = null, sleep = null, calibrating = true)
+        )
+    }
+
+    @Test
     fun `effort preserves the real zero to twenty-one scale`() {
         assertEquals("Resting", effortStatus(0.0).label)
         assertEquals("Light", effortStatus(5.0).label)

@@ -51,7 +51,7 @@ fun todayRecommendation(
     sleep: Int?,
     calibrating: Boolean
 ): String = when {
-    calibrating -> "Keep wearing your tracker while Recovery Tracker learns your baseline."
+    calibrating -> "Keep wearing your tracker to build a reliable baseline."
     recovery == null -> "Sync your latest health data to get a daily recommendation."
     recovery < 40 -> "Prioritize rest and easy movement today."
     (strain ?: 0.0) >= 16.0 -> "Your load is already high. Keep the rest of today easy."

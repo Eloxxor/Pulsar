@@ -24,12 +24,22 @@ object VitalAgeSeries {
         return days.map { it.date }.sorted().mapNotNull { date ->
             val window = (0 until WINDOW_DAYS).mapNotNull { byDate[date.minusDays(it)] }
             if (window.size < MIN_WINDOW_DAYS) return@mapNotNull null
+            val hrv = window.mapNotNull { it.hrvMillis }
+            val rhr = window.mapNotNull { it.restingHr }
+            val sleep = window.mapNotNull { it.sleepMinutes }
+            val steps = window.mapNotNull { it.steps }
+            val strain = window.mapNotNull { it.strain }
             val inputs = VitalAgeInputs(
-                avgHrvMillis = window.mapNotNull { it.hrvMillis }.averageOrNull(),
-                avgRestingHr = window.mapNotNull { it.restingHr }.averageOrNull(),
-                avgSleepMinutes = window.mapNotNull { it.sleepMinutes }.averageOrNull(),
-                avgSteps = window.mapNotNull { it.steps }.averageOrNull(),
-                avgStrain = window.mapNotNull { it.strain }.averageOrNull(),
+                avgHrvMillis = hrv.averageOrNull(),
+                hrvSampleDays = hrv.size,
+                avgRestingHr = rhr.averageOrNull(),
+                restingHrSampleDays = rhr.size,
+                avgSleepMinutes = sleep.averageOrNull(),
+                sleepSampleDays = sleep.size,
+                avgSteps = steps.averageOrNull(),
+                stepsSampleDays = steps.size,
+                avgStrain = strain.averageOrNull(),
+                strainSampleDays = strain.size,
                 maxHrBpm = maxHrBpm
             )
             VitalAgeCalculator.calculate(date.year - birthYear, inputs)?.let { date to it }

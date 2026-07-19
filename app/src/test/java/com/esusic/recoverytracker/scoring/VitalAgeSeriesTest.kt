@@ -40,12 +40,7 @@ class VitalAgeSeriesTest {
         )
         val series = VitalAgeSeries.build(days, birthYear)
         val result = series.single { it.first == start.plusDays(2) }.second
-        // HRV average over non-null values = 50; identical to all-50 case
-        val reference = VitalAgeCalculator.calculate(
-            start.plusDays(2).year - birthYear,
-            VitalAgeInputs(avgHrvMillis = 50.0, avgRestingHr = 60.0, avgSleepMinutes = 450.0, avgSteps = 8000.0, avgStrain = 8.0)
-        )!!
-        assertEquals(reference.vitalAge, result.vitalAge, 1e-9)
+        assertEquals(null, result.hrv)
     }
 
     @Test
@@ -59,8 +54,30 @@ class VitalAgeSeriesTest {
         val result = series.single { it.first == recent.plusDays(2) }.second
         val reference = VitalAgeCalculator.calculate(
             recent.plusDays(2).year - birthYear,
-            VitalAgeInputs(avgHrvMillis = 90.0, avgRestingHr = 60.0, avgSleepMinutes = 450.0, avgSteps = 8000.0, avgStrain = 8.0)
+            VitalAgeInputs(
+                avgHrvMillis = 90.0,
+                hrvSampleDays = 3,
+                avgRestingHr = 60.0,
+                restingHrSampleDays = 3,
+                avgSleepMinutes = 450.0,
+                sleepSampleDays = 3,
+                avgSteps = 8000.0,
+                stepsSampleDays = 3,
+                avgStrain = 8.0,
+                strainSampleDays = 3
+            )
         )!!
         assertEquals(reference.vitalAge, result.vitalAge, 1e-9)
+    }
+
+    @Test
+    fun `three valid days produce partial confidence`() {
+        val start = LocalDate.of(2026, 7, 10)
+        val days = (0L..2L).map { vitals(start.plusDays(it)) }
+
+        val result = VitalAgeSeries.build(days, birthYear).last().second
+
+        assertEquals(3.0 / 7.0, result.hrv!!.confidence, 1e-9)
+        assertEquals(3.0 / 7.0, result.sleep!!.confidence, 1e-9)
     }
 }

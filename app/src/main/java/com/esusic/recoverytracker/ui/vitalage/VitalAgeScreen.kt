@@ -150,7 +150,7 @@ private fun BreakdownCard(result: VitalAgeResult) {
             ComponentRow("Sleep", result.sleep)
             ComponentRow("Activity", result.activity)
             Text(
-                "Each bar shows how that metric shifts your vital age, in years. Left of centre = younger.",
+                "The visible impacts add up to your Vital Age difference. Left of centre = younger.",
                 style = MaterialTheme.typography.bodySmall,
                 color = AppColors.TextMuted
             )
@@ -163,23 +163,28 @@ private fun ComponentRow(label: String, component: VitalAgeComponent?) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
-                if (component != null) "$label · ${(component.weight * 100).roundToInt()}%" else label,
+                if (component != null) {
+                    "$label · ${(component.weight * 100).roundToInt()}% weight · " +
+                        "${(component.confidence * 100).roundToInt()}% confidence"
+                } else {
+                    label
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = AppColors.TextSecondary
             )
             Text(
-                component?.let { "%+.1f yr".format(it.offsetYears) } ?: "no data",
+                component?.let { "%+.1f yr impact".format(it.impactYears) } ?: "not enough data",
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold,
                 color = when {
                     component == null -> AppColors.TextMuted
-                    component.offsetYears <= -0.05 -> AppColors.Recovery
-                    component.offsetYears >= 0.05 -> AppColors.Danger
+                    component.impactYears <= -0.05 -> AppColors.Recovery
+                    component.impactYears >= 0.05 -> AppColors.Danger
                     else -> AppColors.TextSecondary
                 }
             )
         }
-        DivergingBar(component?.offsetYears)
+        DivergingBar(component?.impactYears)
     }
 }
 

@@ -34,9 +34,11 @@ import com.esusic.recoverytracker.ui.presentation.sleepStatus
 import com.esusic.recoverytracker.ui.theme.AppColors
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.math.roundToInt
 
 private val sleepTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val sleepDateFormatter = DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.ENGLISH)
 
 @Composable
 fun SleepScreen(viewModel: SleepViewModel) {
@@ -50,14 +52,21 @@ fun SleepScreen(viewModel: SleepViewModel) {
             .padding(horizontal = 20.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        RootPageHeader(title = "Sleep", subtitle = "Last night")
+        RootPageHeader(
+            title = "Sleep",
+            subtitle = "Night of ${state.selectedDate.format(sleepDateFormatter)}",
+            previousEnabled = state.canGoBack,
+            nextEnabled = state.canGoForward,
+            onPrevious = viewModel::goToPreviousDay,
+            onNext = viewModel::goToNextDay
+        )
 
         val total = state.totalMinutes
         if (total == null) {
             SectionCard {
                 Text("No sleep recorded", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "Refresh Home after your watch has synced with Health Connect.",
+                    "No sleep is available for ${state.selectedDate.format(sleepDateFormatter)}.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = AppColors.TextSecondary
                 )

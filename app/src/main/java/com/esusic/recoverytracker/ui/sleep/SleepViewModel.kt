@@ -3,21 +3,29 @@ package com.esusic.recoverytracker.ui.sleep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.esusic.recoverytracker.data.HealthRepository
+import com.esusic.recoverytracker.data.local.DailyAggregateEntity
 import com.esusic.recoverytracker.model.MetricDelta
 import com.esusic.recoverytracker.model.SleepStagePeriod
 import com.esusic.recoverytracker.model.SleepStageType
 import com.esusic.recoverytracker.model.metricDelta
+import com.esusic.recoverytracker.ui.date.SelectedDayStore
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 
 data class SleepNightPoint(val date: LocalDate, val durationMinutes: Long)
 
 data class SleepUiState(
+    val selectedDate: LocalDate = LocalDate.now(),
+    val canGoBack: Boolean = false,
+    val canGoForward: Boolean = false,
     val totalMinutes: Long? = null,
     val deepMinutes: Long? = null,
     val remMinutes: Long? = null,
@@ -41,108 +49,118 @@ data class SleepUiState(
     val weeklyInsight: String? = null
 )
 
-class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
+class SleepViewModel(
+    private val repository: HealthRepository,
+    private val selectedDayStore: SelectedDayStore = SelectedDayStore()
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SleepUiState())
+    private val _uiState = MutableStateFlow(
+        SleepUiState(selectedDate = selectedDayStore.selectedDate.value)
+    )
     val uiState: StateFlow<SleepUiState> = _uiState.asStateFlow()
-
-    // The chart detail must follow the latest night that actually has sleep — right
-    // after midnight LocalDate.now() has none yet and the chart would never load.
-    private var detailLoadedForDate: String? = null
 
     init {
         viewModelScope.launch {
-            repository.observeRecentAggregates(30).collect { aggregates ->
-                val weeklyNights = aggregates.mapNotNull { aggregate ->
-                    aggregate.sleepDurationMinutes?.let { duration ->
-                        SleepNightPoint(LocalDate.parse(aggregate.date), duration)
-                    }
-                }.take(7).reversed()
-                val weeklyAverage = weeklyNights.takeIf { it.isNotEmpty() }
-                    ?.map { it.durationMinutes.toDouble() }
-                    ?.average()
-                val weeklyInsight = weeklyInsight(weeklyNights)
-                val latestIndex = aggregates.indexOfFirst { it.sleepDurationMinutes != null }
-                val latest = if (latestIndex >= 0) aggregates[latestIndex] else null
-                val priorNights = if (latestIndex >= 0) aggregates.drop(latestIndex + 1) else aggregates
-                val history = priorNights.mapNotNull { it.sleepDurationMinutes }
-                val typical = if (history.isEmpty()) null else history.map { it.toDouble() }.average()
+            combine(
+                selectedDayStore.selectedDate,
+                repository.observeRecentAggregates(30)
+            ) { date, aggregates -> date to aggregates }
+                .collectLatest { (date, aggregates) -> publishDate(date, aggregates) }
+        }
+    }
 
-                if (latest?.sleepDurationMinutes == null || latest.sleepDurationMinutes <= 0) {
-                    _uiState.value = _uiState.value.copy(
-                        totalMinutes = null,
-                        deepMinutes = null,
-                        remMinutes = null,
-                        lightMinutes = null,
-                        deepPercent = 0f,
-                        remPercent = 0f,
-                        lightPercent = 0f,
-                        typicalTotalMinutes = typical,
-                        durationDelta = null,
-                        weeklyNights = weeklyNights,
-                        weeklyAverageMinutes = weeklyAverage,
-                        weeklyInsight = weeklyInsight
-                    )
-                } else {
-                    val total = latest.sleepDurationMinutes
-                    val deep = latest.deepSleepMinutes
-                    val rem = latest.remSleepMinutes
-                    val light = latest.lightSleepMinutes
-                    _uiState.value = _uiState.value.copy(
-                        totalMinutes = total,
-                        deepMinutes = deep,
-                        remMinutes = rem,
-                        lightMinutes = light,
-                        deepPercent = deep?.toFloat()?.div(total) ?: 0f,
-                        remPercent = rem?.toFloat()?.div(total) ?: 0f,
-                        lightPercent = light?.toFloat()?.div(total) ?: 0f,
-                        typicalTotalMinutes = typical,
-                        durationDelta = metricDelta(
-                            total.toDouble(),
-                            typical,
-                            higherIsBetter = true,
-                            neutralBandFraction = 0.05
-                        ),
-                        weeklyNights = weeklyNights,
-                        weeklyAverageMinutes = weeklyAverage,
-                        weeklyInsight = weeklyInsight
-                    )
-                    if (latest.date != detailLoadedForDate) {
-                        detailLoadedForDate = latest.date
-                        val latestDate = LocalDate.parse(latest.date)
-                        val detail = repository.sleepDetailForDate(latestDate)
-                        val need = repository.sleepNeedMinutesFor(latestDate)
-                        val performance = repository.observeRecentScores(30).first()
-                            .find { it.date == latest.date }?.sleepPerformance
-                        if (detail != null) {
-                            val inBed = java.time.Duration.between(detail.session.start, detail.session.end).toMinutes()
-                            val hasStageDetail = detail.session.stages.isNotEmpty()
-                            val awakeMinutes = detail.session.stages
-                                .filter { it.stage == SleepStageType.AWAKE }
-                                .sumOf {
-                                    java.time.Duration.between(it.start, it.end).toMinutes()
-                                }
-                            _uiState.value = _uiState.value.copy(
-                                heartRateBuckets = bucketHeartRateSamples(detail.heartRateSamples, detail.session.start),
-                                stagePeriods = detail.session.stages,
-                                sessionStart = detail.session.start,
-                                sessionEnd = detail.session.end,
-                                inBedMinutes = inBed,
-                                deepMinutes = deep.takeIf { hasStageDetail },
-                                remMinutes = rem.takeIf { hasStageDetail },
-                                lightMinutes = light.takeIf { hasStageDetail },
-                                awakeMinutes = awakeMinutes.takeIf { hasStageDetail },
-                                wakeEvents = detail.session.stages
-                                    .count { it.stage == SleepStageType.AWAKE }
-                                    .takeIf { hasStageDetail },
-                                needMinutes = need,
-                                sleepPerformance = performance
-                            )
-                        }
-                    }
+    fun goToPreviousDay() = selectedDayStore.previous()
+
+    fun goToNextDay() = selectedDayStore.next()
+
+    private suspend fun publishDate(
+        date: LocalDate,
+        aggregates: List<DailyAggregateEntity>
+    ) {
+        val dateString = date.toString()
+        val selected = aggregates.find { it.date == dateString }
+        val priorNights = aggregates.filter { it.date < dateString }
+        val weeklyNights = aggregates
+            .filter { it.date <= dateString }
+            .mapNotNull { aggregate ->
+                aggregate.sleepDurationMinutes?.let { duration ->
+                    SleepNightPoint(LocalDate.parse(aggregate.date), duration)
                 }
             }
+            .take(7)
+            .reversed()
+        val history = priorNights.mapNotNull { it.sleepDurationMinutes }
+        val typical = history.takeIf { it.isNotEmpty() }
+            ?.map { it.toDouble() }
+            ?.average()
+        val base = SleepUiState(
+            selectedDate = date,
+            canGoBack = aggregates.any { it.date < dateString },
+            canGoForward = date < selectedDayStore.today(),
+            typicalTotalMinutes = typical,
+            weeklyNights = weeklyNights,
+            weeklyAverageMinutes = weeklyNights.takeIf { it.isNotEmpty() }
+                ?.map { it.durationMinutes.toDouble() }
+                ?.average(),
+            weeklyInsight = weeklyInsight(weeklyNights)
+        )
+        val total = selected?.sleepDurationMinutes
+        if (total == null || total <= 0) {
+            _uiState.value = base
+            return
         }
+
+        val deep = selected.deepSleepMinutes
+        val rem = selected.remSleepMinutes
+        val light = selected.lightSleepMinutes
+        var state = base.copy(
+            totalMinutes = total,
+            deepMinutes = deep,
+            remMinutes = rem,
+            lightMinutes = light,
+            deepPercent = deep?.toFloat()?.div(total) ?: 0f,
+            remPercent = rem?.toFloat()?.div(total) ?: 0f,
+            lightPercent = light?.toFloat()?.div(total) ?: 0f,
+            durationDelta = metricDelta(
+                total.toDouble(),
+                typical,
+                higherIsBetter = true,
+                neutralBandFraction = 0.05
+            )
+        )
+        val detail = repository.sleepDetailForDate(date)
+        val need = repository.sleepNeedMinutesFor(date)
+        val performance = repository.observeRecentScores(30).first()
+            .find { it.date == dateString }
+            ?.sleepPerformance
+        if (detail != null) {
+            val inBed = Duration.between(detail.session.start, detail.session.end).toMinutes()
+            val hasStageDetail = detail.session.stages.isNotEmpty()
+            val awake = detail.session.stages
+                .filter { it.stage == SleepStageType.AWAKE }
+                .sumOf { Duration.between(it.start, it.end).toMinutes() }
+            state = state.copy(
+                heartRateBuckets = bucketHeartRateSamples(
+                    detail.heartRateSamples,
+                    detail.session.start
+                ),
+                stagePeriods = detail.session.stages,
+                sessionStart = detail.session.start,
+                sessionEnd = detail.session.end,
+                inBedMinutes = inBed,
+                deepMinutes = deep.takeIf { hasStageDetail },
+                remMinutes = rem.takeIf { hasStageDetail },
+                lightMinutes = light.takeIf { hasStageDetail },
+                awakeMinutes = awake.takeIf { hasStageDetail },
+                wakeEvents = detail.session.stages
+                    .count { it.stage == SleepStageType.AWAKE }
+                    .takeIf { hasStageDetail }
+            )
+        }
+        _uiState.value = state.copy(
+            needMinutes = need,
+            sleepPerformance = performance
+        )
     }
 
     private fun weeklyInsight(nights: List<SleepNightPoint>): String? {

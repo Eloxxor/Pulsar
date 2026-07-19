@@ -140,7 +140,7 @@ fun RecoveryTrackerNavHost(startDestination: String) {
 
             composable(RootDestination.SLEEP.route) {
                 val sleepViewModel = viewModel<SleepViewModel> {
-                    SleepViewModel(ServiceLocator.repository)
+                    SleepViewModel(ServiceLocator.repository, selectedDayStore)
                 }
                 SleepScreen(sleepViewModel)
             }

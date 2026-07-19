@@ -14,6 +14,7 @@ import com.esusic.recoverytracker.model.HeartRateSample
 import com.esusic.recoverytracker.model.SleepSession
 import com.esusic.recoverytracker.model.SleepStagePeriod
 import com.esusic.recoverytracker.model.SleepStageType
+import com.esusic.recoverytracker.ui.date.SelectedDayStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
@@ -34,7 +35,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.Instant
+import java.time.Clock
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.Executor
 
@@ -53,6 +56,10 @@ class SleepViewModelTest {
     fun tearDown() {
         Dispatchers.resetMain()
     }
+
+    private fun storeFor(date: LocalDate): SelectedDayStore = SelectedDayStore(
+        Clock.fixed(date.atTime(12, 0).toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
+    )
 
     @Test
     fun `uiState derives stage percentages from the most recent aggregate`() = runTest {
@@ -82,7 +89,7 @@ class SleepViewModelTest {
         val repository = HealthRepository(AggregationService(source), db.dailyScoreDao(), db.dailyAggregateDao(), userPreferences)
         repository.syncDate(LocalDate.of(2026, 7, 13))
 
-        val viewModel = SleepViewModel(repository)
+        val viewModel = SleepViewModel(repository, storeFor(LocalDate.of(2026, 7, 13)))
         viewModel.uiState.filter { it.totalMinutes != null }.first()
 
         assertEquals(400L, viewModel.uiState.value.totalMinutes)
@@ -114,7 +121,7 @@ class SleepViewModelTest {
         val repository = HealthRepository(AggregationService(source), db.dailyScoreDao(), db.dailyAggregateDao(), userPreferences)
         repository.syncDate(LocalDate.of(2026, 7, 13))
 
-        val viewModel = SleepViewModel(repository)
+        val viewModel = SleepViewModel(repository, storeFor(LocalDate.of(2026, 7, 13)))
         viewModel.uiState.filter { it.sessionStart != null }.first()
 
         assertEquals(start, viewModel.uiState.value.sessionStart)
@@ -156,7 +163,7 @@ class SleepViewModelTest {
         repository.syncDate(LocalDate.of(2026, 7, 12))
         repository.syncDate(LocalDate.of(2026, 7, 13))
 
-        val viewModel = SleepViewModel(repository)
+        val viewModel = SleepViewModel(repository, storeFor(LocalDate.of(2026, 7, 13)))
         viewModel.uiState.filter { it.wakeEvents != null }.first()
 
         assertEquals(480L, viewModel.uiState.value.inBedMinutes)
@@ -191,7 +198,7 @@ class SleepViewModelTest {
         repository.syncDate(LocalDate.of(2026, 7, 12))
         repository.syncDate(LocalDate.of(2026, 7, 13))
 
-        val viewModel = SleepViewModel(repository)
+        val viewModel = SleepViewModel(repository, storeFor(LocalDate.of(2026, 7, 13)))
         viewModel.uiState.filter { it.durationDelta != null }.first()
 
         assertEquals(60.0, viewModel.uiState.value.durationDelta!!.diff, 0.0001)
@@ -237,7 +244,7 @@ class SleepViewModelTest {
         repository.syncDate(LocalDate.of(2026, 7, 12))
         repository.syncDate(LocalDate.of(2026, 7, 13))
 
-        val viewModel = SleepViewModel(repository)
+        val viewModel = SleepViewModel(repository, storeFor(LocalDate.of(2026, 7, 13)))
         viewModel.uiState.filter { it.weeklyNights.size == 3 }.first()
 
         assertEquals(450.0, viewModel.uiState.value.weeklyAverageMinutes!!, 0.001)
@@ -281,7 +288,7 @@ class SleepViewModelTest {
         )
         repository.syncDate(LocalDate.of(2026, 7, 13))
 
-        val viewModel = SleepViewModel(repository)
+        val viewModel = SleepViewModel(repository, storeFor(LocalDate.of(2026, 7, 13)))
         val state = viewModel.uiState.filter { it.sessionStart != null }.first()
 
         assertEquals(420L, state.totalMinutes)
@@ -290,5 +297,120 @@ class SleepViewModelTest {
         assertNull(state.lightMinutes)
         assertNull(state.awakeMinutes)
         assertNull(state.wakeEvents)
+    }
+
+    @Test
+    fun `selected day loads the matching older sleep session`() = runTest {
+        val synchronousExecutor = Executor { it.run() }
+        val db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        )
+            .setQueryExecutor(synchronousExecutor)
+            .setTransactionExecutor(synchronousExecutor)
+            .allowMainThreadQueries()
+            .build()
+        val userPreferences = UserPreferencesRepository(
+            PreferenceDataStoreFactory.create(
+                scope = CoroutineScope(UnconfinedTestDispatcher())
+            ) {
+                tempFolder.newFile("selected-night.preferences_pb")
+            }
+        )
+        val night1Start = Instant.parse("2026-07-12T00:00:00Z")
+        val night2Start = Instant.parse("2026-07-13T00:00:00Z")
+        val source = FakeHealthDataSource(
+            sleep = listOf(
+                SleepSession(night1Start, night1Start.plus(400, ChronoUnit.MINUTES), emptyList()),
+                SleepSession(night2Start, night2Start.plus(460, ChronoUnit.MINUTES), emptyList())
+            )
+        )
+        val repository = HealthRepository(
+            AggregationService(source),
+            db.dailyScoreDao(),
+            db.dailyAggregateDao(),
+            userPreferences
+        )
+        repository.syncDate(LocalDate.of(2026, 7, 12))
+        repository.syncDate(LocalDate.of(2026, 7, 13))
+        val clock = Clock.fixed(
+            Instant.parse("2026-07-14T12:00:00Z"),
+            ZoneOffset.UTC
+        )
+        val dayStore = SelectedDayStore(clock)
+        val viewModel = SleepViewModel(repository, dayStore)
+
+        dayStore.select(LocalDate.of(2026, 7, 12))
+        val state = viewModel.uiState.filter {
+            it.selectedDate == LocalDate.of(2026, 7, 12) && it.sessionStart != null
+        }.first()
+
+        assertEquals(LocalDate.of(2026, 7, 12), state.selectedDate)
+        assertEquals(night1Start, state.sessionStart)
+        assertEquals(400L, state.totalMinutes)
+        assertTrue(state.weeklyNights.all { it.date <= state.selectedDate })
+    }
+
+    @Test
+    fun `day without sleep clears detail from the previously selected night`() = runTest {
+        val synchronousExecutor = Executor { it.run() }
+        val db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        )
+            .setQueryExecutor(synchronousExecutor)
+            .setTransactionExecutor(synchronousExecutor)
+            .allowMainThreadQueries()
+            .build()
+        val userPreferences = UserPreferencesRepository(
+            PreferenceDataStoreFactory.create(
+                scope = CoroutineScope(UnconfinedTestDispatcher())
+            ) {
+                tempFolder.newFile("empty-selected-night.preferences_pb")
+            }
+        )
+        val start = Instant.parse("2026-07-13T00:00:00Z")
+        val source = FakeHealthDataSource(
+            sleep = listOf(
+                SleepSession(
+                    start,
+                    start.plus(420, ChronoUnit.MINUTES),
+                    listOf(
+                        SleepStagePeriod(
+                            SleepStageType.LIGHT,
+                            start,
+                            start.plus(420, ChronoUnit.MINUTES)
+                        )
+                    )
+                )
+            ),
+            heartRate = listOf(HeartRateSample(start.plus(10, ChronoUnit.MINUTES), 58L))
+        )
+        val repository = HealthRepository(
+            AggregationService(source),
+            db.dailyScoreDao(),
+            db.dailyAggregateDao(),
+            userPreferences
+        )
+        repository.syncDate(LocalDate.of(2026, 7, 13))
+        val clock = Clock.fixed(
+            Instant.parse("2026-07-14T12:00:00Z"),
+            ZoneOffset.UTC
+        )
+        val dayStore = SelectedDayStore(clock)
+        val viewModel = SleepViewModel(repository, dayStore)
+
+        dayStore.select(LocalDate.of(2026, 7, 13))
+        viewModel.uiState.filter { it.sessionStart != null }.first()
+
+        dayStore.select(LocalDate.of(2026, 7, 14))
+        val empty = viewModel.uiState.filter {
+            it.selectedDate == LocalDate.of(2026, 7, 14) && it.totalMinutes == null
+        }.first()
+
+        assertNull(empty.sessionStart)
+        assertTrue(empty.heartRateBuckets.isEmpty())
+        assertTrue(empty.stagePeriods.isEmpty())
+        assertNull(empty.sleepPerformance)
     }
 }

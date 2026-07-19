@@ -2,6 +2,7 @@ package com.esusic.recoverytracker.ui.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -16,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +31,15 @@ import com.esusic.recoverytracker.ui.presentation.todayRecommendation
 import com.esusic.recoverytracker.ui.theme.AppColors
 import com.esusic.recoverytracker.ui.today.TodayUiState
 
+enum class ReadinessLayout { ASYMMETRIC, STACKED }
+
+internal fun readinessLayoutFor(maxWidthDp: Int, fontScale: Float): ReadinessLayout =
+    if (maxWidthDp < 400 || fontScale > 1.15f) {
+        ReadinessLayout.STACKED
+    } else {
+        ReadinessLayout.ASYMMETRIC
+    }
+
 @Composable
 fun ReadinessCluster(
     state: TodayUiState,
@@ -37,29 +48,54 @@ fun ReadinessCluster(
     onSleepClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth().height(360.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        RecoveryHeroCard(
-            state = state,
-            onClick = onRecoveryClick,
-            modifier = Modifier.weight(1f).fillMaxHeight()
-        )
-        Column(
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            EffortCard(
-                state = state,
-                onClick = onEffortClick,
-                modifier = Modifier.weight(1f).fillMaxWidth()
-            )
-            SleepCard(
-                state = state,
-                onClick = onSleepClick,
-                modifier = Modifier.weight(1f).fillMaxWidth()
-            )
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val fontScale = LocalDensity.current.fontScale
+        if (readinessLayoutFor(maxWidth.value.toInt(), fontScale) == ReadinessLayout.STACKED) {
+            val recoveryHeight = if (fontScale > 1.15f) 340.dp else 300.dp
+            val compactHeight = if (fontScale > 1.15f) 210.dp else 180.dp
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                RecoveryHeroCard(
+                    state = state,
+                    onClick = onRecoveryClick,
+                    modifier = Modifier.fillMaxWidth().height(recoveryHeight)
+                )
+                EffortCard(
+                    state = state,
+                    onClick = onEffortClick,
+                    modifier = Modifier.fillMaxWidth().height(compactHeight)
+                )
+                SleepCard(
+                    state = state,
+                    onClick = onSleepClick,
+                    modifier = Modifier.fillMaxWidth().height(compactHeight)
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth().height(360.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                RecoveryHeroCard(
+                    state = state,
+                    onClick = onRecoveryClick,
+                    modifier = Modifier.weight(1f).fillMaxHeight()
+                )
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    EffortCard(
+                        state = state,
+                        onClick = onEffortClick,
+                        modifier = Modifier.weight(1f).fillMaxWidth()
+                    )
+                    SleepCard(
+                        state = state,
+                        onClick = onSleepClick,
+                        modifier = Modifier.weight(1f).fillMaxWidth()
+                    )
+                }
+            }
         }
     }
 }

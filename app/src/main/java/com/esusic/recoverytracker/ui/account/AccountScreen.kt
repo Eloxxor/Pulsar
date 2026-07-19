@@ -19,7 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
@@ -40,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -271,9 +269,9 @@ private fun DataCategory(label: String, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            Icons.Default.Favorite,
+            Icons.Default.CheckCircle,
             contentDescription = null,
-            tint = AppColors.HeartRate,
+            tint = AppColors.Hrv,
             modifier = Modifier.height(16.dp)
         )
         Text(label, style = MaterialTheme.typography.bodySmall, color = AppColors.TextSecondary)
@@ -299,7 +297,15 @@ private fun BirthYearDialog(
                 value = input,
                 onValueChange = { input = it.filter(Char::isDigit).take(4) },
                 label = { Text("Year") },
-                supportingText = { Text("Used only to calculate age-based context.") },
+                supportingText = {
+                    Text(
+                        if (input.isNotEmpty() && !isValid) {
+                            "Enter a year between 1900 and ${LocalDate.now().year}."
+                        } else {
+                            "Used only to calculate age-based context."
+                        }
+                    )
+                },
                 isError = input.isNotEmpty() && !isValid,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)

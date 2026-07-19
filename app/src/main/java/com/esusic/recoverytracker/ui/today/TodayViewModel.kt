@@ -11,9 +11,12 @@ import com.esusic.recoverytracker.scoring.BaselineCalculator
 import com.esusic.recoverytracker.scoring.DailyVitals
 import com.esusic.recoverytracker.scoring.VitalAgeSeries
 import com.esusic.recoverytracker.ui.common.ChartPoint
+import com.esusic.recoverytracker.ui.date.SelectedDayStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Clock
@@ -72,37 +75,43 @@ class TodayViewModel(
     private val repository: HealthRepository,
     private val healthDataSource: HealthDataSource,
     private val userPreferences: UserPreferencesRepository,
-    private val clock: Clock = Clock.systemDefaultZone()
+    private val clock: Clock = Clock.systemDefaultZone(),
+    private val selectedDayStore: SelectedDayStore = SelectedDayStore(clock)
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(TodayUiState(selectedDate = LocalDate.now(clock)))
+    private val _uiState = MutableStateFlow(
+        TodayUiState(selectedDate = selectedDayStore.selectedDate.value)
+    )
     val uiState: StateFlow<TodayUiState> = _uiState.asStateFlow()
-
-    private var selectedDate: LocalDate = LocalDate.now(clock)
 
     init {
         refresh()
-    }
-
-    fun refresh() = load(sync = true)
-
-    fun selectDate(date: LocalDate) {
-        selectedDate = date.coerceAtMost(LocalDate.now(clock))
-        load(sync = false)
-    }
-
-    fun goToPreviousDay() = selectDate(selectedDate.minusDays(1))
-
-    fun goToNextDay() = selectDate(selectedDate.plusDays(1))
-
-    private fun load(sync: Boolean) {
         viewModelScope.launch {
+            selectedDayStore.selectedDate.drop(1).collectLatest { selectedDate ->
+                load(selectedDate, sync = false)
+            }
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            load(selectedDayStore.selectedDate.value, sync = true)
+        }
+    }
+
+    fun selectDate(date: LocalDate) = selectedDayStore.select(date)
+
+    fun goToPreviousDay() = selectedDayStore.previous()
+
+    fun goToNextDay() = selectedDayStore.next()
+
+    private suspend fun load(selectedDate: LocalDate, sync: Boolean) {
             _uiState.value = _uiState.value.copy(isRefreshing = true)
 
             val hasPermissions = healthDataSource.hasAllPermissions()
             if (!hasPermissions) {
                 _uiState.value = _uiState.value.copy(hasAllPermissions = false, isRefreshing = false)
-                return@launch
+                return
             }
 
             if (sync) repository.syncToday()
@@ -214,7 +223,6 @@ class TodayViewModel(
                 vitalAge = vitalAge,
                 chronologicalAge = chronologicalAge
             )
-        }
     }
 
     companion object {

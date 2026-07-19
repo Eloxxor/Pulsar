@@ -11,6 +11,7 @@ import com.esusic.recoverytracker.data.local.AppDatabase
 import com.esusic.recoverytracker.data.prefs.UserPreferencesRepository
 import com.esusic.recoverytracker.model.HeartRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
+import com.esusic.recoverytracker.ui.date.SelectedDayStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
@@ -94,6 +95,30 @@ class ActivityViewModelTest {
             viewModel.uiState.value.recovery.points.sortedBy { it.date },
             viewModel.uiState.value.recovery.points
         )
+    }
+
+    @Test
+    fun `external selected day anchors Activity data and trends`() = runTest {
+        val source = FakeHealthDataSource()
+        val repository = newRepository(source, "activity-global-day.preferences_pb")
+        val july12 = LocalDate.of(2026, 7, 12)
+        val july13 = LocalDate.of(2026, 7, 13)
+        repository.syncDate(july12)
+        repository.syncDate(july13)
+        val fixedClock = Clock.fixed(
+            Instant.parse("2026-07-13T12:00:00Z"),
+            ZoneOffset.UTC
+        )
+        val dayStore = SelectedDayStore(fixedClock)
+        val viewModel = ActivityViewModel(repository, source, fixedClock, dayStore)
+
+        dayStore.select(july12)
+        val state = viewModel.uiState.filter {
+            !it.isLoading && it.selectedDate == july12
+        }.first()
+
+        assertEquals(july12, state.selectedDate)
+        assertEquals(listOf(july12), state.recovery.points.map { it.date })
     }
 
     private fun newRepository(

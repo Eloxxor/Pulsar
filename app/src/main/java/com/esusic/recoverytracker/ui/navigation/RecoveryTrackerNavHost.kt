@@ -16,6 +16,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -36,6 +37,7 @@ import com.esusic.recoverytracker.ui.activity.ActivityViewModel
 import com.esusic.recoverytracker.ui.detail.MetricDetailScreen
 import com.esusic.recoverytracker.ui.detail.MetricDetailViewModel
 import com.esusic.recoverytracker.ui.detail.MetricType
+import com.esusic.recoverytracker.ui.date.SelectedDayStore
 import com.esusic.recoverytracker.ui.home.HomeScreen
 import com.esusic.recoverytracker.ui.onboarding.OnboardingScreen
 import com.esusic.recoverytracker.ui.onboarding.OnboardingViewModel
@@ -57,6 +59,7 @@ private const val DETAIL_ROUTE = "detail/{metricType}"
 @Composable
 fun RecoveryTrackerNavHost(startDestination: String) {
     val navController = rememberNavController()
+    val selectedDayStore = remember { SelectedDayStore() }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val showBottomBar = shouldShowBottomBar(currentDestination?.route)
@@ -121,7 +124,8 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                     TodayViewModel(
                         ServiceLocator.repository,
                         ServiceLocator.healthDataSource,
-                        ServiceLocator.userPreferencesRepository
+                        ServiceLocator.userPreferencesRepository,
+                        selectedDayStore = selectedDayStore
                     )
                 }
                 HomeScreen(
@@ -143,7 +147,11 @@ fun RecoveryTrackerNavHost(startDestination: String) {
 
             composable(RootDestination.ACTIVITY.route) {
                 val activityViewModel = viewModel<ActivityViewModel> {
-                    ActivityViewModel(ServiceLocator.repository, ServiceLocator.healthDataSource)
+                    ActivityViewModel(
+                        ServiceLocator.repository,
+                        ServiceLocator.healthDataSource,
+                        selectedDayStore = selectedDayStore
+                    )
                 }
                 ActivityScreen(activityViewModel)
             }

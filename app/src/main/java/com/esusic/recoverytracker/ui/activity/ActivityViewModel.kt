@@ -9,6 +9,7 @@ import com.esusic.recoverytracker.data.local.DailyScoreEntity
 import com.esusic.recoverytracker.model.MetricDelta
 import com.esusic.recoverytracker.model.metricDelta
 import com.esusic.recoverytracker.ui.common.ChartPoint
+import com.esusic.recoverytracker.ui.date.SelectedDayStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,19 +56,19 @@ private data class ActivitySnapshot(
 class ActivityViewModel(
     private val repository: HealthRepository,
     private val healthDataSource: HealthDataSource,
-    private val clock: Clock = Clock.systemDefaultZone()
+    private val clock: Clock = Clock.systemDefaultZone(),
+    private val selectedDayStore: SelectedDayStore = SelectedDayStore(clock)
 ) : ViewModel() {
-    private val selectedDate = MutableStateFlow(LocalDate.now(clock))
     private val selectedRange = MutableStateFlow(ActivityRange.WEEK)
     private val _uiState = MutableStateFlow(
-        ActivityUiState(selectedDate = LocalDate.now(clock))
+        ActivityUiState(selectedDate = selectedDayStore.selectedDate.value)
     )
     val uiState: StateFlow<ActivityUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
             combine(
-                selectedDate,
+                selectedDayStore.selectedDate,
                 selectedRange,
                 repository.observeRecentScores(ActivityRange.QUARTER.days),
                 repository.observeRecentAggregates(ActivityRange.QUARTER.days)
@@ -82,19 +83,25 @@ class ActivityViewModel(
     }
 
     fun selectDate(date: LocalDate) {
-        selectedDate.value = date.coerceAtMost(LocalDate.now(clock))
+        selectedDayStore.select(date)
     }
 
-    fun goToPreviousDay() = selectDate(selectedDate.value.minusDays(1))
+    fun goToPreviousDay() = selectedDayStore.previous()
 
-    fun goToNextDay() = selectDate(selectedDate.value.plusDays(1))
+    fun goToNextDay() = selectedDayStore.next()
 
     private suspend fun publishSnapshot(snapshot: ActivitySnapshot) {
         val dateString = snapshot.date.toString()
         val score = snapshot.scores.find { it.date == dateString }
         val aggregate = snapshot.aggregates.find { it.date == dateString }
-        val rangeScores = snapshot.scores.take(snapshot.range.days).reversed()
-        val rangeAggregates = snapshot.aggregates.take(snapshot.range.days).reversed()
+        val rangeScores = snapshot.scores
+            .filter { it.date <= dateString }
+            .take(snapshot.range.days)
+            .reversed()
+        val rangeAggregates = snapshot.aggregates
+            .filter { it.date <= dateString }
+            .take(snapshot.range.days)
+            .reversed()
 
         val start = snapshot.date.atStartOfDay(clock.zone).toInstant()
         val end = snapshot.date.plusDays(1).atStartOfDay(clock.zone).toInstant()

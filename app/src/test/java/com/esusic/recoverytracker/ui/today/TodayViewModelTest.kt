@@ -12,6 +12,7 @@ import com.esusic.recoverytracker.data.prefs.UserPreferencesRepository
 import com.esusic.recoverytracker.model.DeltaKind
 import com.esusic.recoverytracker.model.HeartRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
+import com.esusic.recoverytracker.ui.date.SelectedDayStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -128,6 +129,33 @@ class TodayViewModelTest {
         assertEquals(false, viewModel.uiState.value.isToday)
         assertEquals(50L, viewModel.uiState.value.restingHeartRate)
         assertEquals(true, viewModel.uiState.value.canGoForward)
+    }
+
+    @Test
+    fun `external selected day change reloads Home`() = runTest {
+        val yesterday = LocalDate.now().minusDays(1)
+        val source = FakeHealthDataSource(
+            restingHr = listOf(
+                RestingHrSample(
+                    yesterday.atStartOfDay(ZoneOffset.UTC).toInstant().plusSeconds(60),
+                    50L
+                )
+            )
+        )
+        val repository = repositoryWith(source)
+        repository.syncDate(yesterday)
+        val dayStore = SelectedDayStore()
+        val viewModel = TodayViewModel(
+            repository,
+            source,
+            userPreferences,
+            selectedDayStore = dayStore
+        )
+
+        dayStore.select(yesterday)
+
+        assertEquals(yesterday, viewModel.uiState.value.selectedDate)
+        assertEquals(50L, viewModel.uiState.value.restingHeartRate)
     }
 
     @Test

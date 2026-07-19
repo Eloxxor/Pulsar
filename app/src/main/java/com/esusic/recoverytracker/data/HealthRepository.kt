@@ -155,6 +155,19 @@ class HealthRepository(
         const val SCORE_FORMULA_VERSION = 4
     }
 
+    // Sleep need for the night ending on this date, from stored history only (no
+    // Health Connect read) — same inputs syncDate feeds into the sleep score.
+    suspend fun sleepNeedMinutesFor(date: LocalDate): Double? {
+        val history = aggregateDao.recentBefore(date.toString(), BaselineCalculator.WINDOW_DAYS).reversed()
+        val sleepHistory = history.mapNotNull { it.sleepDurationMinutes }
+        if (sleepHistory.isEmpty()) return null
+        val typical = sleepHistory.map { it.toDouble() }.average()
+        val priorDayStrain = scoreDao.getByDate(date.minusDays(1).toString())
+            ?.let { StrainScore(date.minusDays(1), it.strainValue) }
+        val debt = SleepPerformanceCalculator.calculateSleepDebtMinutes(typical, sleepHistory)
+        return SleepPerformanceCalculator.calculateNeedMinutes(typical, priorDayStrain, debt)
+    }
+
     suspend fun sleepDetailForDate(date: LocalDate): SleepDetail? {
         val aggregate = aggregationService.aggregateForDate(date)
         val session = aggregate.sleep ?: return null

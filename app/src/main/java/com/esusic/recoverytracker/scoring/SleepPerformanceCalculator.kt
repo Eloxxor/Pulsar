@@ -25,6 +25,18 @@ object SleepPerformanceCalculator {
         return totalShortfall.coerceAtMost(MAX_ACCUMULATED_DEBT_MINUTES)
     }
 
+    fun calculateNeedMinutes(
+        typicalSleepMinutes: Double,
+        priorDayStrain: StrainScore?,
+        accumulatedDebtMinutes: Double
+    ): Double {
+        val strainAdjustment = ((priorDayStrain?.value ?: 0.0) / MAX_STRAIN) * MAX_STRAIN_ADJUSTMENT_MINUTES
+        val debtRepayment = accumulatedDebtMinutes.coerceIn(0.0, MAX_NIGHTLY_DEBT_REPAYMENT_MINUTES)
+        // A personal average below 7h is a chronic-deprivation pattern, not a lower
+        // need — the floor keeps the score honest for habitual short sleepers.
+        return typicalSleepMinutes.coerceAtLeast(MIN_NEED_MINUTES) + strainAdjustment + debtRepayment
+    }
+
     fun calculate(
         actualSleepMinutes: Long?,
         typicalSleepMinutes: Double,
@@ -35,12 +47,7 @@ object SleepPerformanceCalculator {
     ): Int? {
         if (actualSleepMinutes == null || typicalSleepMinutes <= 0.0) return null
 
-        val strainAdjustment = ((priorDayStrain?.value ?: 0.0) / MAX_STRAIN) * MAX_STRAIN_ADJUSTMENT_MINUTES
-        val debtRepayment = accumulatedDebtMinutes.coerceIn(0.0, MAX_NIGHTLY_DEBT_REPAYMENT_MINUTES)
-        // A personal average below 7h is a chronic-deprivation pattern, not a lower
-        // need — the floor keeps the score honest for habitual short sleepers.
-        val sleepNeedMinutes = typicalSleepMinutes.coerceAtLeast(MIN_NEED_MINUTES) +
-            strainAdjustment + debtRepayment
+        val sleepNeedMinutes = calculateNeedMinutes(typicalSleepMinutes, priorDayStrain, accumulatedDebtMinutes)
 
         val durationScore = (actualSleepMinutes / sleepNeedMinutes).coerceIn(0.0, 1.0)
         val qualityScore = if (deepRemMinutes != null && actualSleepMinutes > 0) {

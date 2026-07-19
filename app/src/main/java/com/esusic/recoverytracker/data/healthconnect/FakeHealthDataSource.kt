@@ -8,6 +8,7 @@ import com.esusic.recoverytracker.model.RespiratoryRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
 import com.esusic.recoverytracker.model.SkinTemperatureDeltaSample
 import com.esusic.recoverytracker.model.SleepSession
+import com.esusic.recoverytracker.model.StepsInterval
 import java.time.Instant
 
 class FakeHealthDataSource(
@@ -16,6 +17,7 @@ class FakeHealthDataSource(
     private val restingHr: List<RestingHrSample> = emptyList(),
     private val sleep: List<SleepSession> = emptyList(),
     private val steps: Int = 0,
+    private val stepsIntervalList: List<StepsInterval> = emptyList(),
     private val activeCalories: Double = 0.0,
     private val exercise: List<ExerciseSession> = emptyList(),
     private val respiratoryRate: List<RespiratoryRateSample> = emptyList(),
@@ -36,6 +38,9 @@ class FakeHealthDataSource(
         sleep.filter { it.start >= start && it.start < end }
 
     override suspend fun totalSteps(start: Instant, end: Instant) = steps
+
+    override suspend fun stepsIntervals(start: Instant, end: Instant) =
+        stepsIntervalList.filter { it.start >= start && it.start < end }
 
     override suspend fun totalActiveCalories(start: Instant, end: Instant) = activeCalories
 

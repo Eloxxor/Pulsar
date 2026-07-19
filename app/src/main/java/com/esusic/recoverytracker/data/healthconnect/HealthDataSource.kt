@@ -8,6 +8,7 @@ import com.esusic.recoverytracker.model.RespiratoryRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
 import com.esusic.recoverytracker.model.SkinTemperatureDeltaSample
 import com.esusic.recoverytracker.model.SleepSession
+import com.esusic.recoverytracker.model.StepsInterval
 import java.time.Instant
 
 interface HealthDataSource {
@@ -16,6 +17,7 @@ interface HealthDataSource {
     suspend fun restingHeartRate(start: Instant, end: Instant): List<RestingHrSample>
     suspend fun sleepSessions(start: Instant, end: Instant): List<SleepSession>
     suspend fun totalSteps(start: Instant, end: Instant): Int
+    suspend fun stepsIntervals(start: Instant, end: Instant): List<StepsInterval>
     suspend fun totalActiveCalories(start: Instant, end: Instant): Double
     suspend fun exerciseSessions(start: Instant, end: Instant): List<ExerciseSession>
     suspend fun respiratoryRateSamples(start: Instant, end: Instant): List<RespiratoryRateSample>

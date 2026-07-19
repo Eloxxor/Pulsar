@@ -174,6 +174,33 @@ class HealthRepositoryTest {
     }
 
     @Test
+    fun `sleepNeedMinutesFor uses stored history and floors at seven hours`() = runTest {
+        val night1 = date.minusDays(2)
+        val night2 = date.minusDays(1)
+        val s1 = night1.atStartOfDay(ZoneOffset.UTC).toInstant()
+        val s2 = night2.atStartOfDay(ZoneOffset.UTC).toInstant()
+        val source = FakeHealthDataSource(
+            sleep = listOf(
+                SleepSession(s1, s1.plusSeconds(400 * 60), emptyList()),
+                SleepSession(s2, s2.plusSeconds(400 * 60), emptyList())
+            )
+        )
+        val repository = repositoryWith(source)
+        repository.syncDate(night1)
+        repository.syncDate(night2)
+
+        val need = repository.sleepNeedMinutesFor(date)
+
+        // typical 400 floors to 420 plus debt repayment for the two short nights
+        assertTrue(need != null && need >= 420.0)
+    }
+
+    @Test
+    fun `sleepNeedMinutesFor returns null without any sleep history`() = runTest {
+        assertNull(repositoryWith(FakeHealthDataSource()).sleepNeedMinutesFor(date))
+    }
+
+    @Test
     fun `sleepDetailForDate returns null when there is no sleep session`() = runTest {
         val result = repositoryWith(FakeHealthDataSource()).sleepDetailForDate(date)
         assertNull(result)

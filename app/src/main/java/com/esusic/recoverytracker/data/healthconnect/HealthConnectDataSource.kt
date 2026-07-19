@@ -22,6 +22,7 @@ import com.esusic.recoverytracker.model.RespiratoryRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
 import com.esusic.recoverytracker.model.SkinTemperatureDeltaSample
 import com.esusic.recoverytracker.model.SleepSession
+import com.esusic.recoverytracker.model.StepsInterval
 import java.time.Instant
 
 class HealthConnectDataSource(private val client: HealthConnectClient) : HealthDataSource {
@@ -40,6 +41,9 @@ class HealthConnectDataSource(private val client: HealthConnectClient) : HealthD
 
     override suspend fun totalSteps(start: Instant, end: Instant): Int =
         HealthConnectRecordMapper.toTotalSteps(readRecords<StepsRecord>(start, end))
+
+    override suspend fun stepsIntervals(start: Instant, end: Instant): List<StepsInterval> =
+        HealthConnectRecordMapper.toStepsIntervals(readRecords<StepsRecord>(start, end))
 
     override suspend fun totalActiveCalories(start: Instant, end: Instant): Double =
         HealthConnectRecordMapper.toTotalActiveCalories(readRecords<ActiveCaloriesBurnedRecord>(start, end))

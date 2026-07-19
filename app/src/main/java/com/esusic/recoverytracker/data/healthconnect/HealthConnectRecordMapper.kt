@@ -18,6 +18,7 @@ import com.esusic.recoverytracker.model.RespiratoryRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
 import com.esusic.recoverytracker.model.SkinTemperatureDeltaSample
 import com.esusic.recoverytracker.model.SleepSession
+import com.esusic.recoverytracker.model.StepsInterval
 import com.esusic.recoverytracker.model.SleepStagePeriod
 import com.esusic.recoverytracker.model.SleepStageType
 
@@ -54,6 +55,9 @@ object HealthConnectRecordMapper {
     }
 
     fun toTotalSteps(records: List<StepsRecord>): Int = records.sumOf { it.count }.toInt()
+
+    fun toStepsIntervals(records: List<StepsRecord>): List<StepsInterval> =
+        records.map { StepsInterval(it.startTime, it.endTime, it.count.toInt()) }
 
     fun toTotalActiveCalories(records: List<ActiveCaloriesBurnedRecord>): Double =
         records.sumOf { it.energy.inKilocalories }

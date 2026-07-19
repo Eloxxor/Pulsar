@@ -32,6 +32,21 @@ class SleepPerformanceCalculatorTest {
     }
 
     @Test
+    fun `need minutes is typical plus strain and debt adjustments`() {
+        // typical 400 -> floored to 420; strain 21 adds 60; debt 200 capped at 60
+        val need = SleepPerformanceCalculator.calculateNeedMinutes(
+            400.0, StrainScore(date, 21.0), 200.0
+        )
+        assertEquals(540.0, need, 0.001)
+    }
+
+    @Test
+    fun `need minutes without strain or debt is the floored typical`() {
+        assertEquals(420.0, SleepPerformanceCalculator.calculateNeedMinutes(300.0, null, 0.0), 0.001)
+        assertEquals(500.0, SleepPerformanceCalculator.calculateNeedMinutes(500.0, null, 0.0), 0.001)
+    }
+
+    @Test
     fun `calculate returns null when actual sleep is null`() {
         val result = SleepPerformanceCalculator.calculate(null, 480.0, null, 0.0)
         assertNull(result)

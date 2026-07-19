@@ -121,6 +121,52 @@ class SleepViewModelTest {
     }
 
     @Test
+    fun `uiState exposes in-bed and awake minutes wake events and sleep need`() = runTest {
+        val synchronousExecutor = Executor { it.run() }
+        val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java)
+            .setQueryExecutor(synchronousExecutor)
+            .setTransactionExecutor(synchronousExecutor)
+            .allowMainThreadQueries().build()
+        val userPreferences = UserPreferencesRepository(
+            PreferenceDataStoreFactory.create(scope = CoroutineScope(UnconfinedTestDispatcher())) {
+                tempFolder.newFile("test4.preferences_pb")
+            }
+        )
+        val night1 = Instant.parse("2026-07-12T00:00:00Z")
+        val night2 = Instant.parse("2026-07-13T00:00:00Z")
+        // Night 2: 480 min in bed, 80 deep + 90 rem + 230 light = 400 asleep, two awake periods.
+        val session2 = SleepSession(
+            night2, night2.plus(480, ChronoUnit.MINUTES),
+            listOf(
+                SleepStagePeriod(SleepStageType.AWAKE, night2, night2.plus(10, ChronoUnit.MINUTES)),
+                SleepStagePeriod(SleepStageType.DEEP, night2.plus(10, ChronoUnit.MINUTES), night2.plus(90, ChronoUnit.MINUTES)),
+                SleepStagePeriod(SleepStageType.REM, night2.plus(90, ChronoUnit.MINUTES), night2.plus(180, ChronoUnit.MINUTES)),
+                SleepStagePeriod(SleepStageType.AWAKE, night2.plus(180, ChronoUnit.MINUTES), night2.plus(250, ChronoUnit.MINUTES)),
+                SleepStagePeriod(SleepStageType.LIGHT, night2.plus(250, ChronoUnit.MINUTES), night2.plus(480, ChronoUnit.MINUTES))
+            )
+        )
+        val source = FakeHealthDataSource(
+            sleep = listOf(
+                SleepSession(night1, night1.plus(400, ChronoUnit.MINUTES), emptyList()),
+                session2
+            )
+        )
+        val repository = HealthRepository(AggregationService(source), db.dailyScoreDao(), db.dailyAggregateDao(), userPreferences)
+        repository.syncDate(LocalDate.of(2026, 7, 12))
+        repository.syncDate(LocalDate.of(2026, 7, 13))
+
+        val viewModel = SleepViewModel(repository)
+        viewModel.uiState.filter { it.wakeEvents != null }.first()
+
+        assertEquals(480L, viewModel.uiState.value.inBedMinutes)
+        assertEquals(2, viewModel.uiState.value.wakeEvents)
+        val expectedAwake = 480L - (viewModel.uiState.value.deepMinutes!! +
+            viewModel.uiState.value.remMinutes!! + viewModel.uiState.value.lightMinutes!!)
+        assertEquals(expectedAwake, viewModel.uiState.value.awakeMinutes)
+        assertTrue(viewModel.uiState.value.needMinutes != null && viewModel.uiState.value.needMinutes!! >= 420.0)
+    }
+
+    @Test
     fun `durationDelta compares the latest night against prior nights only`() = runTest {
         val synchronousExecutor = Executor { it.run() }
         val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java)

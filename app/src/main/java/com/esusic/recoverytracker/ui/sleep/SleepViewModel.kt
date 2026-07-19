@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.esusic.recoverytracker.data.HealthRepository
 import com.esusic.recoverytracker.model.MetricDelta
 import com.esusic.recoverytracker.model.SleepStagePeriod
+import com.esusic.recoverytracker.model.SleepStageType
 import com.esusic.recoverytracker.model.metricDelta
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -26,7 +28,12 @@ data class SleepUiState(
     val heartRateBuckets: List<HeartRateBucket> = emptyList(),
     val stagePeriods: List<SleepStagePeriod> = emptyList(),
     val sessionStart: Instant? = null,
-    val sessionEnd: Instant? = null
+    val sessionEnd: Instant? = null,
+    val inBedMinutes: Long? = null,
+    val awakeMinutes: Long? = null,
+    val wakeEvents: Int? = null,
+    val needMinutes: Double? = null,
+    val sleepPerformance: Int? = null
 )
 
 class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
@@ -82,13 +89,23 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
                     )
                     if (latest.date != detailLoadedForDate) {
                         detailLoadedForDate = latest.date
-                        val detail = repository.sleepDetailForDate(LocalDate.parse(latest.date))
+                        val latestDate = LocalDate.parse(latest.date)
+                        val detail = repository.sleepDetailForDate(latestDate)
+                        val need = repository.sleepNeedMinutesFor(latestDate)
+                        val performance = repository.observeRecentScores(30).first()
+                            .find { it.date == latest.date }?.sleepPerformance
                         if (detail != null) {
+                            val inBed = java.time.Duration.between(detail.session.start, detail.session.end).toMinutes()
                             _uiState.value = _uiState.value.copy(
                                 heartRateBuckets = bucketHeartRateSamples(detail.heartRateSamples, detail.session.start),
                                 stagePeriods = detail.session.stages,
                                 sessionStart = detail.session.start,
-                                sessionEnd = detail.session.end
+                                sessionEnd = detail.session.end,
+                                inBedMinutes = inBed,
+                                awakeMinutes = (inBed - (deep + rem + light)).coerceAtLeast(0L),
+                                wakeEvents = detail.session.stages.count { it.stage == SleepStageType.AWAKE },
+                                needMinutes = need,
+                                sleepPerformance = performance
                             )
                         }
                     }

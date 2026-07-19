@@ -27,163 +27,197 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.esusic.recoverytracker.model.SleepStageType
 import com.esusic.recoverytracker.ui.common.DeltaChip
-import com.esusic.recoverytracker.ui.common.DetailTopBar
-import com.esusic.recoverytracker.ui.common.Eyebrow
+import com.esusic.recoverytracker.ui.common.RootPageHeader
 import com.esusic.recoverytracker.ui.common.SectionCard
+import com.esusic.recoverytracker.ui.common.StatusPill
+import com.esusic.recoverytracker.ui.presentation.sleepStatus
 import com.esusic.recoverytracker.ui.theme.AppColors
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-private fun formatMinutes(minutes: Long): String = "${minutes / 60}h ${minutes % 60}m"
+private val sleepTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 @Composable
-fun SleepScreen(viewModel: SleepViewModel, onBack: () -> Unit) {
-    val uiState by viewModel.uiState.collectAsState()
+@Suppress("UNUSED_PARAMETER")
+fun SleepScreen(viewModel: SleepViewModel, onBack: (() -> Unit)? = null) {
+    val state by viewModel.uiState.collectAsState()
 
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppColors.Canvas)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        DetailTopBar("Sleep", onBack)
+        RootPageHeader(title = "Sleep", subtitle = "Last night")
 
-        val total = uiState.totalMinutes
+        val total = state.totalMinutes
         if (total == null) {
             SectionCard {
-                Text("No sleep data synced yet.", color = AppColors.TextSecondary)
+                Text("No sleep recorded", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "Pull to refresh on the Overview tab after your watch has synced.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AppColors.TextMuted
+                    "Refresh Home after your watch has synced with Health Connect.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppColors.TextSecondary
                 )
             }
             return@Column
         }
 
+        SleepHero(state, total)
+
+        val sessionStart = state.sessionStart
+        val sessionEnd = state.sessionEnd
+        if (sessionStart != null && sessionEnd != null && state.stagePeriods.isNotEmpty()) {
+            val inBed = state.inBedMinutes ?: total
+            val restorative = if (inBed > 0) {
+                (((state.deepMinutes ?: 0L) + (state.remMinutes ?: 0L)).toFloat() / inBed * 100)
+                    .roundToInt()
+            } else {
+                0
+            }
+            SectionCard(title = "Sleep timeline") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    StatusPill("$restorative% restorative", AppColors.SleepViolet)
+                }
+                SleepHypnogram(
+                    stagePeriods = state.stagePeriods,
+                    sessionStart = sessionStart,
+                    sessionEnd = sessionEnd
+                )
+            }
+        }
+
+        SectionCard(title = "Sleep stages") {
+            val inBed = state.inBedMinutes ?: total
+            StageRow(SleepStageType.AWAKE, state.awakeMinutes, inBed)
+            StageRow(SleepStageType.REM, state.remMinutes, inBed)
+            StageRow(SleepStageType.LIGHT, state.lightMinutes, inBed)
+            StageRow(SleepStageType.DEEP, state.deepMinutes, inBed)
+            if (state.stagePeriods.isEmpty()) {
+                Text(
+                    "Your source recorded duration without detailed sleep stages.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppColors.TextSecondary
+                )
+            }
+        }
+
+        state.needMinutes?.let { need ->
+            SectionCard(title = "Hours versus need") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    DurationStat("Asleep", total, Alignment.Start)
+                    DurationStat("Need", need.roundToInt().toLong(), Alignment.End)
+                }
+                state.sleepPerformance?.let {
+                    StatusPill("$it% of sleep performance", AppColors.SleepViolet)
+                }
+                state.wakeEvents?.let { events ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Wake events", color = AppColors.TextSecondary)
+                        Text(events.toString(), fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        if (sessionStart != null && sessionEnd != null && state.heartRateBuckets.isNotEmpty()) {
+            SectionCard(title = "Sleeping heart rate") {
+                SleepHeartRateChart(
+                    buckets = state.heartRateBuckets,
+                    sessionStart = sessionStart,
+                    sessionEnd = sessionEnd
+                )
+            }
+        }
+
+        if (state.weeklyNights.isNotEmpty()) {
+            SectionCard(title = "This week") {
+                state.weeklyAverageMinutes?.let {
+                    Text(
+                        "Average ${formatSleepMinutes(it.roundToInt().toLong())}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+                SleepWeeklyChart(state.weeklyNights)
+                state.weeklyInsight?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AppColors.TextSecondary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SleepHero(state: SleepUiState, total: Long) {
+    val status = sleepStatus(state.sleepPerformance)
+    SectionCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Eyebrow("Last night's sleep")
-            uiState.inBedMinutes?.let {
-                Text(
-                    "${formatMinutes(it)} in bed · vs 30 nights",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AppColors.TextMuted
-                )
-            }
+            StatusPill(status.label, AppColors.SleepViolet)
+            state.durationDelta?.let { DeltaChip(it, "min") }
         }
-
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                formatMinutes(total),
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold
+                state.sleepPerformance?.toString() ?: "—",
+                style = MaterialTheme.typography.displayLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = AppColors.SleepViolet
             )
-            DeltaChip(uiState.durationDelta, "min")
-        }
-
-        val sessionStart = uiState.sessionStart
-        val sessionEnd = uiState.sessionEnd
-        if (sessionStart != null && sessionEnd != null && uiState.heartRateBuckets.isNotEmpty()) {
-            SectionCard(title = "Heart rate") {
-                SleepHeartRateChart(
-                    buckets = uiState.heartRateBuckets,
-                    sessionStart = sessionStart,
-                    sessionEnd = sessionEnd
-                )
-            }
-        }
-
-        SectionCard {
-            val inBed = uiState.inBedMinutes ?: total
-            StageRow(SleepStageType.AWAKE, uiState.awakeMinutes, inBed)
-            StageRow(SleepStageType.LIGHT, uiState.lightMinutes, inBed)
-            StageRow(SleepStageType.DEEP, uiState.deepMinutes, inBed)
-            StageRow(SleepStageType.REM, uiState.remMinutes, inBed)
-        }
-
-        if (sessionStart != null && sessionEnd != null && uiState.stagePeriods.isNotEmpty()) {
-            val inBed = uiState.inBedMinutes ?: total
-            val restorativePercent = if (inBed > 0) {
-                (((uiState.deepMinutes ?: 0) + (uiState.remMinutes ?: 0)).toFloat() / inBed * 100).roundToInt()
-            } else {
-                0
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Eyebrow("Stage timeline")
+            state.sleepPerformance?.let {
                 Text(
-                    "$restorativePercent% restorative",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AppColors.TextMuted
-                )
-            }
-            SectionCard {
-                SleepHypnogram(
-                    stagePeriods = uiState.stagePeriods,
-                    sessionStart = sessionStart,
-                    sessionEnd = sessionEnd
+                    "%",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = AppColors.TextSecondary,
+                    modifier = Modifier.padding(bottom = 7.dp)
                 )
             }
         }
-
-        uiState.needMinutes?.let { need ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Eyebrow("Hours vs need")
-                uiState.sleepPerformance?.let {
-                    Text(
-                        "$it%",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AppColors.SleepViolet
-                    )
-                }
-            }
-            SectionCard {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Asleep", style = MaterialTheme.typography.bodySmall, color = AppColors.TextSecondary)
-                        Text(
-                            formatMinutes(total),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.End) {
-                        Text("Need", style = MaterialTheme.typography.bodySmall, color = AppColors.TextSecondary)
-                        Text(
-                            formatMinutes(need.roundToInt().toLong()),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
+        Text(
+            formatSleepMinutes(total),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.ExtraBold
+        )
+        if (state.sessionStart != null && state.sessionEnd != null) {
+            val formatter = sleepTimeFormatter.withZone(ZoneId.systemDefault())
+            Text(
+                "${formatter.format(state.sessionStart)} – ${formatter.format(state.sessionEnd)}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = AppColors.TextSecondary
+            )
         }
+        Text(status.message, style = MaterialTheme.typography.bodyLarge)
+    }
+}
 
-        uiState.wakeEvents?.let { events ->
-            SectionCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Wake events", style = MaterialTheme.typography.bodyMedium, color = AppColors.TextSecondary)
-                    Text(
-                        "$events",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        }
+@Composable
+private fun DurationStat(label: String, minutes: Long, alignment: Alignment.Horizontal) {
+    Column(horizontalAlignment = alignment, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = AppColors.TextSecondary)
+        Text(
+            formatSleepMinutes(minutes),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.ExtraBold
+        )
     }
 }
 
@@ -195,32 +229,37 @@ private fun StageRow(stage: SleepStageType, minutes: Long?, inBedMinutes: Long) 
     } else {
         0f
     }
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(color))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(Modifier.size(10.dp).clip(CircleShape).background(color))
                 Text(stageLabel(stage), style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    "${(fraction * 100).roundToInt()}%",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = color,
-                    fontWeight = FontWeight.SemiBold
-                )
+                if (minutes != null) {
+                    Text(
+                        "${(fraction * 100).roundToInt()}%",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = color,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
             Text(
-                minutes?.let { formatMinutes(it) } ?: "--",
+                minutes?.let(::formatSleepMinutes) ?: "—",
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppColors.TextSecondary,
                 fontWeight = FontWeight.SemiBold
             )
         }
         Box(
-            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+            modifier = Modifier.fillMaxWidth().height(6.dp)
+                .clip(RoundedCornerShape(3.dp)).background(AppColors.GridLine)
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth(fraction).fillMaxHeight()
@@ -229,3 +268,5 @@ private fun StageRow(stage: SleepStageType, minutes: Long?, inBedMinutes: Long) 
         }
     }
 }
+
+private fun formatSleepMinutes(minutes: Long): String = "${minutes / 60}h ${minutes % 60}m"

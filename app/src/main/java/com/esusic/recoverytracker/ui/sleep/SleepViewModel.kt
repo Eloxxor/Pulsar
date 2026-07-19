@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 
+data class SleepNightPoint(val date: LocalDate, val durationMinutes: Long)
+
 data class SleepUiState(
     val totalMinutes: Long? = null,
     val deepMinutes: Long? = null,
@@ -33,7 +35,10 @@ data class SleepUiState(
     val awakeMinutes: Long? = null,
     val wakeEvents: Int? = null,
     val needMinutes: Double? = null,
-    val sleepPerformance: Int? = null
+    val sleepPerformance: Int? = null,
+    val weeklyNights: List<SleepNightPoint> = emptyList(),
+    val weeklyAverageMinutes: Double? = null,
+    val weeklyInsight: String? = null
 )
 
 class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
@@ -48,6 +53,15 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
     init {
         viewModelScope.launch {
             repository.observeRecentAggregates(30).collect { aggregates ->
+                val weeklyNights = aggregates.mapNotNull { aggregate ->
+                    aggregate.sleepDurationMinutes?.let { duration ->
+                        SleepNightPoint(LocalDate.parse(aggregate.date), duration)
+                    }
+                }.take(7).reversed()
+                val weeklyAverage = weeklyNights.takeIf { it.isNotEmpty() }
+                    ?.map { it.durationMinutes.toDouble() }
+                    ?.average()
+                val weeklyInsight = weeklyInsight(weeklyNights)
                 val latestIndex = aggregates.indexOfFirst { it.sleepDurationMinutes != null }
                 val latest = if (latestIndex >= 0) aggregates[latestIndex] else null
                 val priorNights = if (latestIndex >= 0) aggregates.drop(latestIndex + 1) else aggregates
@@ -64,7 +78,10 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
                         remPercent = 0f,
                         lightPercent = 0f,
                         typicalTotalMinutes = typical,
-                        durationDelta = null
+                        durationDelta = null,
+                        weeklyNights = weeklyNights,
+                        weeklyAverageMinutes = weeklyAverage,
+                        weeklyInsight = weeklyInsight
                     )
                 } else {
                     val total = latest.sleepDurationMinutes
@@ -85,7 +102,10 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
                             typical,
                             higherIsBetter = true,
                             neutralBandFraction = 0.05
-                        )
+                        ),
+                        weeklyNights = weeklyNights,
+                        weeklyAverageMinutes = weeklyAverage,
+                        weeklyInsight = weeklyInsight
                     )
                     if (latest.date != detailLoadedForDate) {
                         detailLoadedForDate = latest.date
@@ -111,6 +131,18 @@ class SleepViewModel(private val repository: HealthRepository) : ViewModel() {
                     }
                 }
             }
+        }
+    }
+
+    private fun weeklyInsight(nights: List<SleepNightPoint>): String? {
+        if (nights.size < 2) return null
+        val previousAverage = nights.dropLast(1).map { it.durationMinutes }.average()
+        val latest = nights.last().durationMinutes
+        return when {
+            latest >= previousAverage + 30.0 -> "Your sleep duration improved this week."
+            latest <= previousAverage - 30.0 ->
+                "Your latest night was shorter than your recent average."
+            else -> "Your sleep duration is holding steady."
         }
     }
 }

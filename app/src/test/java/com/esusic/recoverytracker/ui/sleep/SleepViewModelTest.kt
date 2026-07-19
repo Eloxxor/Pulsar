@@ -196,4 +196,55 @@ class SleepViewModelTest {
         assertEquals(60.0, viewModel.uiState.value.durationDelta!!.diff, 0.0001)
         assertEquals(DeltaKind.BETTER, viewModel.uiState.value.durationDelta!!.kind)
     }
+
+    @Test
+    fun `weekly state exposes chronological nights average and insight`() = runTest {
+        val synchronousExecutor = Executor { it.run() }
+        val db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java
+        )
+            .setQueryExecutor(synchronousExecutor)
+            .setTransactionExecutor(synchronousExecutor)
+            .allowMainThreadQueries()
+            .build()
+        val userPreferences = UserPreferencesRepository(
+            PreferenceDataStoreFactory.create(
+                scope = CoroutineScope(UnconfinedTestDispatcher())
+            ) {
+                tempFolder.newFile("weekly.preferences_pb")
+            }
+        )
+        val starts = listOf(
+            Instant.parse("2026-07-11T00:00:00Z"),
+            Instant.parse("2026-07-12T00:00:00Z"),
+            Instant.parse("2026-07-13T00:00:00Z")
+        )
+        val durations = listOf(420L, 450L, 480L)
+        val source = FakeHealthDataSource(
+            sleep = starts.zip(durations).map { (start, minutes) ->
+                SleepSession(start, start.plus(minutes, ChronoUnit.MINUTES), emptyList())
+            }
+        )
+        val repository = HealthRepository(
+            AggregationService(source),
+            db.dailyScoreDao(),
+            db.dailyAggregateDao(),
+            userPreferences
+        )
+        repository.syncDate(LocalDate.of(2026, 7, 11))
+        repository.syncDate(LocalDate.of(2026, 7, 12))
+        repository.syncDate(LocalDate.of(2026, 7, 13))
+
+        val viewModel = SleepViewModel(repository)
+        viewModel.uiState.filter { it.weeklyNights.size == 3 }.first()
+
+        assertEquals(450.0, viewModel.uiState.value.weeklyAverageMinutes!!, 0.001)
+        assertEquals(3, viewModel.uiState.value.weeklyNights.size)
+        assertTrue(viewModel.uiState.value.weeklyInsight!!.isNotBlank())
+        assertEquals(
+            LocalDate.of(2026, 7, 11),
+            viewModel.uiState.value.weeklyNights.first().date
+        )
+    }
 }

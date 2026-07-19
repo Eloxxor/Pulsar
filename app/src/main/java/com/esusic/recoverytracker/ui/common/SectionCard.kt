@@ -23,12 +23,12 @@ fun SectionCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, AppColors.GridLine)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             title?.let { Eyebrow(it) }

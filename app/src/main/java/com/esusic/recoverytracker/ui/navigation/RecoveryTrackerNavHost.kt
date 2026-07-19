@@ -1,18 +1,23 @@
 package com.esusic.recoverytracker.ui.navigation
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -68,32 +73,47 @@ fun RecoveryTrackerNavHost(startDestination: String) {
         containerColor = AppColors.Canvas,
         bottomBar = {
             if (showBottomBar) {
-                Column {
-                    HorizontalDivider(color = AppColors.GridLine)
-                    NavigationBar(
-                        containerColor = AppColors.NavBar,
-                        tonalElevation = 0.dp
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 24.dp, vertical = 10.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(32.dp),
+                        color = AppColors.NavBar,
+                        border = BorderStroke(1.dp, AppColors.GridLine),
+                        shadowElevation = 16.dp
                     ) {
-                        RootDestination.entries.forEach { destination ->
-                            NavigationBarItem(
-                                selected = currentDestination?.hierarchy
-                                    ?.any { it.route == destination.route } == true,
-                                onClick = { navController.navigateRoot(destination) },
-                                icon = {
-                                    Icon(
-                                        rootIcon(destination),
-                                        contentDescription = destination.label
+                        NavigationBar(
+                            modifier = Modifier.height(72.dp),
+                            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                            tonalElevation = 0.dp
+                        ) {
+                            RootDestination.entries.forEach { destination ->
+                                val selected = currentDestination?.hierarchy
+                                    ?.any { it.route == destination.route } == true
+                                val accent = rootAccent(destination)
+                                NavigationBarItem(
+                                    selected = selected,
+                                    onClick = { navController.navigateRoot(destination) },
+                                    icon = {
+                                        Icon(
+                                            rootIcon(destination),
+                                            contentDescription = destination.label
+                                        )
+                                    },
+                                    label = { Text(destination.label) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        indicatorColor = accent.copy(alpha = 0.18f),
+                                        selectedIconColor = accent,
+                                        selectedTextColor = accent,
+                                        unselectedIconColor = AppColors.TextMuted,
+                                        unselectedTextColor = AppColors.TextMuted
                                     )
-                                },
-                                label = { Text(destination.label) },
-                                colors = NavigationBarItemDefaults.colors(
-                                    indicatorColor = AppColors.Recovery.copy(alpha = 0.12f),
-                                    selectedIconColor = AppColors.TextPrimary,
-                                    selectedTextColor = AppColors.TextPrimary,
-                                    unselectedIconColor = AppColors.TextMuted,
-                                    unselectedTextColor = AppColors.TextMuted
                                 )
-                            )
+                            }
                         }
                     }
                 }
@@ -226,4 +246,11 @@ private fun rootIcon(destination: RootDestination): ImageVector = when (destinat
     RootDestination.SLEEP -> Icons.Filled.Bedtime
     RootDestination.ACTIVITY -> Icons.AutoMirrored.Filled.DirectionsRun
     RootDestination.ACCOUNT -> Icons.Filled.Person
+}
+
+private fun rootAccent(destination: RootDestination) = when (destination) {
+    RootDestination.HOME -> AppColors.Recovery
+    RootDestination.SLEEP -> AppColors.SleepViolet
+    RootDestination.ACTIVITY -> AppColors.ActivityCyan
+    RootDestination.ACCOUNT -> AppColors.Hrv
 }

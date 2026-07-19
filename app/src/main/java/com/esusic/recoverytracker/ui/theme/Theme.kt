@@ -3,13 +3,13 @@ package com.esusic.recoverytracker.ui.theme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-private val LightColors = lightColorScheme(
+private val DarkColors = darkColorScheme(
     primary = AppColors.Recovery,
     secondary = AppColors.Strain,
     tertiary = AppColors.SleepViolet,
@@ -18,7 +18,7 @@ private val LightColors = lightColorScheme(
     onBackground = AppColors.TextPrimary,
     surface = AppColors.Surface,
     onSurface = AppColors.TextPrimary,
-    surfaceVariant = AppColors.Canvas,
+    surfaceVariant = AppColors.SurfaceElevated,
     onSurfaceVariant = AppColors.TextSecondary,
     outline = AppColors.GridLine
 )
@@ -88,7 +88,7 @@ val ColorScheme.warning get() = AppColors.Warning
 @Composable
 fun RecoveryTrackerTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = LightColors,
+        colorScheme = DarkColors,
         typography = RecoveryTypography,
         content = content
     )

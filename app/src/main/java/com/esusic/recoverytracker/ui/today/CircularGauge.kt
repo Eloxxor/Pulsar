@@ -1,9 +1,12 @@
 package com.esusic.recoverytracker.ui.today
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -26,6 +29,16 @@ fun CircularGauge(
     strokeWidth: Dp = 12.dp,
     centerContent: @Composable () -> Unit = {}
 ) {
+    val targetFraction = if (isIndeterminate || maxValue <= 0f) {
+        1f
+    } else {
+        (value / maxValue).coerceIn(0f, 1f)
+    }
+    val animatedFraction by animateFloatAsState(
+        targetValue = targetFraction,
+        animationSpec = tween(durationMillis = 260),
+        label = "gauge progress"
+    )
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val stroke = strokeWidth.toPx()
@@ -58,11 +71,19 @@ fun CircularGauge(
                     )
                 )
             } else {
-                val fraction = (value / maxValue).coerceIn(0f, 1f)
+                drawArc(
+                    color = color.copy(alpha = 0.20f),
+                    startAngle = -90f,
+                    sweepAngle = 360f * animatedFraction,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = stroke * 2f, cap = StrokeCap.Round)
+                )
                 drawArc(
                     color = color,
                     startAngle = -90f,
-                    sweepAngle = 360f * fraction,
+                    sweepAngle = 360f * animatedFraction,
                     useCenter = false,
                     topLeft = topLeft,
                     size = arcSize,

@@ -1,6 +1,5 @@
 package com.esusic.recoverytracker.ui.common
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,12 +30,14 @@ fun MetricTile(
     unit: String? = null,
     modifier: Modifier = Modifier,
     accent: Color = AppColors.TextPrimary,
+    glowAlpha: Float = 0.08f,
     supportingText: String? = null,
     delta: MetricDelta? = null,
     deltaUnit: String = "",
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit = {}
 ) {
+    val shape = RoundedCornerShape(22.dp)
     val spokenValue = buildString {
         append(label)
         append(", ")
@@ -48,11 +49,11 @@ fun MetricTile(
     }
     Card(
         modifier = modifier
+            .neonSurface(shape, accent, glowAlpha)
             .semantics(mergeDescendants = true) { contentDescription = spokenValue }
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
-        border = BorderStroke(1.dp, AppColors.GridLine)
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp),

@@ -180,4 +180,31 @@ class TodayViewModelTest {
 
         assertEquals(false, viewModel.uiState.value.hasAllPermissions)
     }
+
+    @Test
+    fun `home state exposes chronological age and stored sleep stages`() = runTest {
+        val today = LocalDate.now()
+        val start = today.minusDays(1).atTime(22, 0)
+            .atZone(java.time.ZoneId.systemDefault()).toInstant()
+        val sleep = com.esusic.recoverytracker.model.SleepSession(
+            start = start,
+            end = start.plusSeconds(8 * 3600L),
+            stages = listOf(
+                com.esusic.recoverytracker.model.SleepStagePeriod(
+                    com.esusic.recoverytracker.model.SleepStageType.DEEP,
+                    start,
+                    start.plusSeconds(90 * 60L)
+                )
+            )
+        )
+        val source = FakeHealthDataSource(sleep = listOf(sleep))
+        val repository = repositoryWith(source)
+        userPreferences.setBirthYear(today.year - 30)
+
+        val viewModel = TodayViewModel(repository, source, userPreferences)
+        viewModel.refresh()
+
+        assertEquals(30, viewModel.uiState.value.chronologicalAge)
+        assertEquals(90L, viewModel.uiState.value.deepSleepMinutes)
+    }
 }

@@ -28,6 +28,9 @@ data class TodayUiState(
     val strainValue: Double? = null,
     val sleepPerformance: Int? = null,
     val sleepDurationMinutes: Long? = null,
+    val deepSleepMinutes: Long? = null,
+    val remSleepMinutes: Long? = null,
+    val lightSleepMinutes: Long? = null,
     val restingHeartRate: Long? = null,
     val avgHrvMillis: Double? = null,
     val steps: Int? = null,
@@ -61,7 +64,8 @@ data class TodayUiState(
     val hourlySteps: List<Int> = List(24) { 0 },
     val stepsLast6h: Int? = null,
     val heartRateSpark: List<Float> = emptyList(),
-    val vitalAge: Double? = null
+    val vitalAge: Double? = null,
+    val chronologicalAge: Int? = null
 )
 
 class TodayViewModel(
@@ -147,6 +151,7 @@ class TodayViewModel(
                 .values.map { bucket -> bucket.map { it.bpm }.average().toFloat() }
 
             val birthYear = userPreferences.birthYear.first()
+            val chronologicalAge = birthYear?.let { selectedDate.year - it }
             val vitalAge = birthYear?.let { year ->
                 val days = aggregates.map { a ->
                     DailyVitals(
@@ -168,6 +173,9 @@ class TodayViewModel(
                 strainValue = score?.strainValue,
                 sleepPerformance = score?.sleepPerformance,
                 sleepDurationMinutes = aggregate?.sleepDurationMinutes,
+                deepSleepMinutes = aggregate?.deepSleepMinutes,
+                remSleepMinutes = aggregate?.remSleepMinutes,
+                lightSleepMinutes = aggregate?.lightSleepMinutes,
                 restingHeartRate = aggregate?.restingHeartRate,
                 avgHrvMillis = aggregate?.avgHrvMillis,
                 steps = aggregate?.steps,
@@ -203,7 +211,8 @@ class TodayViewModel(
                 hourlySteps = hourly.toList(),
                 stepsLast6h = stepsLast6h,
                 heartRateSpark = spark,
-                vitalAge = vitalAge
+                vitalAge = vitalAge,
+                chronologicalAge = chronologicalAge
             )
         }
     }

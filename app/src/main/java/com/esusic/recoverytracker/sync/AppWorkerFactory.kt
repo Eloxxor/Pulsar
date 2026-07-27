@@ -13,6 +13,8 @@ class AppWorkerFactory(private val repositoryProvider: () -> HealthRepository) :
         workerParameters: WorkerParameters
     ): ListenableWorker? = when (workerClassName) {
         SyncWorker::class.java.name -> SyncWorker(appContext, workerParameters, repositoryProvider())
+        MorningNotificationWorker::class.java.name ->
+            MorningNotificationWorker(appContext, workerParameters, repositoryProvider())
         else -> null
     }
 }

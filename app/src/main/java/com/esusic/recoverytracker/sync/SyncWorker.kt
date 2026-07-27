@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.esusic.recoverytracker.data.HealthRepository
+import com.esusic.recoverytracker.widget.RecoveryWidgetProvider
 
 class SyncWorker(
     context: Context,
@@ -13,6 +14,7 @@ class SyncWorker(
 
     override suspend fun doWork(): Result = try {
         repository.syncToday()
+        RecoveryWidgetProvider.refresh(applicationContext)
         Result.success()
     } catch (e: Exception) {
         Result.retry()

@@ -1,0 +1,8 @@
+<resources>
+    <color name="canvas">#FF05060B</color>
+    <color name="icon_background">#FF080A12</color>
+    <color name="recovery">#FF00D89F</color>
+    <color name="widget_surface">#FF11131B</color>
+    <color name="widget_text_primary">#FFF5F7FB</color>
+    <color name="widget_text_secondary">#FFA7AEC4</color>
+</resources>

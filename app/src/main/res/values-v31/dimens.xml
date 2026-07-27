@@ -1,0 +1,4 @@
+<resources>
+    <!-- Matches the launcher's own widget corner rounding on Android 12+. -->
+    <dimen name="widget_corner_radius">@android:dimen/system_app_widget_background_radius</dimen>
+</resources>

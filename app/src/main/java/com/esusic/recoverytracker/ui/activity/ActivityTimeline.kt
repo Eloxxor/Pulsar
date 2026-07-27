@@ -8,20 +8,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.esusic.recoverytracker.R
 import com.esusic.recoverytracker.ui.theme.AppColors
 
 @Composable
 fun ActivityTimeline(hourlySteps: List<Int>, modifier: Modifier = Modifier) {
     val normalized = List(24) { index -> hourlySteps.getOrElse(index) { 0 }.coerceAtLeast(0) }
     val total = normalized.sum()
+    val spokenTimeline = stringResource(R.string.activity_timeline_description, total)
     Canvas(
         modifier = modifier
             .fillMaxWidth()
             .height(112.dp)
-            .semantics { contentDescription = "Hourly activity, $total steps" }
+            .semantics { contentDescription = spokenTimeline }
     ) {
         val maximum = normalized.maxOrNull()?.coerceAtLeast(1) ?: 1
         val slotWidth = size.width / normalized.size
@@ -30,7 +33,7 @@ fun ActivityTimeline(hourlySteps: List<Int>, modifier: Modifier = Modifier) {
             val height = (steps.toFloat() / maximum) * size.height
             val left = index * slotWidth + (slotWidth - barWidth) / 2f
             drawRoundRect(
-                color = if (steps > 0) AppColors.Strain else AppColors.GridLine,
+                color = if (steps > 0) AppColors.Movement else AppColors.GridLine,
                 topLeft = Offset(left, size.height - height.coerceAtLeast(3.dp.toPx())),
                 size = Size(barWidth, height.coerceAtLeast(3.dp.toPx())),
                 cornerRadius = CornerRadius(barWidth / 2f)

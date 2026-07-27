@@ -1,5 +1,6 @@
 package com.esusic.recoverytracker.ui.navigation
 
+import com.esusic.recoverytracker.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -7,13 +8,19 @@ import org.junit.Test
 
 class RootDestinationTest {
     @Test
-    fun `root destinations expose the approved four tabs in order`() {
+    fun `root destinations expose the approved five tabs in order`() {
         assertEquals(
-            listOf("home", "sleep", "activity", "account"),
+            listOf("home", "sleep", "activity", "journal", "account"),
             RootDestination.entries.map { it.route }
         )
         assertEquals(
-            listOf("Home", "Sleep", "Activity", "Account"),
+            listOf(
+                R.string.nav_home,
+                R.string.nav_sleep,
+                R.string.nav_activity,
+                R.string.nav_journal,
+                R.string.nav_account
+            ),
             RootDestination.entries.map { it.label }
         )
     }

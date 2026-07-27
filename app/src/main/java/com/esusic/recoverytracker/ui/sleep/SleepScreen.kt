@@ -15,6 +15,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,39 +27,74 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.esusic.recoverytracker.R
 import com.esusic.recoverytracker.model.SleepStageType
 import com.esusic.recoverytracker.ui.common.DeltaChip
 import com.esusic.recoverytracker.ui.common.RootPageHeader
 import com.esusic.recoverytracker.ui.common.SectionCard
 import com.esusic.recoverytracker.ui.common.StatusPill
+import com.esusic.recoverytracker.ui.common.rememberDateFormatter
 import com.esusic.recoverytracker.ui.presentation.sleepStatus
 import com.esusic.recoverytracker.ui.theme.AppColors
 import com.esusic.recoverytracker.ui.today.CircularGauge
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.roundToInt
 
 private val sleepTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-private val sleepDateFormatter = DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.ENGLISH)
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun SleepScreen(viewModel: SleepViewModel) {
+fun SleepScreen(viewModel: SleepViewModel, contentBottomPadding: Dp = 0.dp) {
     val state by viewModel.uiState.collectAsState()
+    val pullState = rememberPullRefreshState(state.isRefreshing, viewModel::refresh)
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.Canvas)
+            .pullRefresh(pullState)
+    ) {
+        SleepContent(state, viewModel, contentBottomPadding)
+        PullRefreshIndicator(
+            refreshing = state.isRefreshing,
+            state = pullState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            backgroundColor = AppColors.Surface,
+            contentColor = AppColors.SleepViolet
+        )
+    }
+}
+
+@Composable
+private fun SleepContent(
+    state: SleepUiState,
+    viewModel: SleepViewModel,
+    contentBottomPadding: Dp
+) {
+    val sleepDateFormatter = rememberDateFormatter(R.string.date_pattern_weekday_month_day)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 24.dp),
+            .padding(
+                start = 20.dp,
+                end = 20.dp,
+                top = 24.dp,
+                bottom = 24.dp + contentBottomPadding
+            ),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         RootPageHeader(
-            title = "Sleep",
-            subtitle = "Night of ${state.selectedDate.format(sleepDateFormatter)}",
+            title = stringResource(R.string.sleep_title),
+            subtitle = stringResource(
+                R.string.sleep_night_of,
+                state.selectedDate.format(sleepDateFormatter)
+            ),
             previousEnabled = state.canGoBack,
             nextEnabled = state.canGoForward,
             onPrevious = viewModel::goToPreviousDay,
@@ -65,9 +104,15 @@ fun SleepScreen(viewModel: SleepViewModel) {
         val total = state.totalMinutes
         if (total == null) {
             SectionCard {
-                Text("No sleep recorded", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "No sleep is available for ${state.selectedDate.format(sleepDateFormatter)}.",
+                    stringResource(R.string.sleep_none_title),
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Text(
+                    stringResource(
+                        R.string.sleep_none_body,
+                        state.selectedDate.format(sleepDateFormatter)
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = AppColors.TextSecondary
                 )
@@ -87,12 +132,15 @@ fun SleepScreen(viewModel: SleepViewModel) {
             } else {
                 0
             }
-            SectionCard(title = "Sleep timeline") {
+            SectionCard(title = stringResource(R.string.sleep_timeline_title)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    StatusPill("$restorative% restorative", AppColors.SleepViolet)
+                    StatusPill(
+                        stringResource(R.string.sleep_restorative, restorative),
+                        AppColors.SleepViolet
+                    )
                 }
                 SleepHypnogram(
                     stagePeriods = state.stagePeriods,
@@ -102,7 +150,7 @@ fun SleepScreen(viewModel: SleepViewModel) {
             }
         }
 
-        SectionCard(title = "Sleep stages") {
+        SectionCard(title = stringResource(R.string.sleep_stages_title)) {
             val inBed = state.inBedMinutes ?: total
             StageRow(SleepStageType.AWAKE, state.awakeMinutes, inBed)
             StageRow(SleepStageType.REM, state.remMinutes, inBed)
@@ -110,7 +158,7 @@ fun SleepScreen(viewModel: SleepViewModel) {
             StageRow(SleepStageType.DEEP, state.deepMinutes, inBed)
             if (state.stagePeriods.isEmpty()) {
                 Text(
-                    "Your source recorded duration without detailed sleep stages.",
+                    stringResource(R.string.sleep_stages_missing),
                     style = MaterialTheme.typography.bodyMedium,
                     color = AppColors.TextSecondary
                 )
@@ -118,23 +166,33 @@ fun SleepScreen(viewModel: SleepViewModel) {
         }
 
         state.needMinutes?.let { need ->
-            SectionCard(title = "Hours versus need") {
+            SectionCard(title = stringResource(R.string.sleep_versus_need_title)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    DurationStat("Asleep", total, Alignment.Start)
-                    DurationStat("Need", need.roundToInt().toLong(), Alignment.End)
+                    DurationStat(stringResource(R.string.sleep_asleep), total, Alignment.Start)
+                    DurationStat(
+                        stringResource(R.string.sleep_need),
+                        need.roundToInt().toLong(),
+                        Alignment.End
+                    )
                 }
                 state.sleepPerformance?.let {
-                    StatusPill("$it% of sleep performance", AppColors.SleepViolet)
+                    StatusPill(
+                        stringResource(R.string.sleep_performance_share, it),
+                        AppColors.SleepViolet
+                    )
                 }
                 state.wakeEvents?.let { events ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Wake events", color = AppColors.TextSecondary)
+                        Text(
+                            stringResource(R.string.sleep_wake_events),
+                            color = AppColors.TextSecondary
+                        )
                         Text(events.toString(), fontWeight = FontWeight.Bold)
                     }
                 }
@@ -142,7 +200,7 @@ fun SleepScreen(viewModel: SleepViewModel) {
         }
 
         if (sessionStart != null && sessionEnd != null && state.heartRateBuckets.isNotEmpty()) {
-            SectionCard(title = "Sleeping heart rate") {
+            SectionCard(title = stringResource(R.string.sleep_heart_rate_title)) {
                 SleepHeartRateChart(
                     buckets = state.heartRateBuckets,
                     sessionStart = sessionStart,
@@ -152,10 +210,13 @@ fun SleepScreen(viewModel: SleepViewModel) {
         }
 
         if (state.weeklyNights.isNotEmpty()) {
-            SectionCard(title = "This week") {
+            SectionCard(title = stringResource(R.string.sleep_week_title)) {
                 state.weeklyAverageMinutes?.let {
                     Text(
-                        "Average ${formatSleepMinutes(it.roundToInt().toLong())}",
+                        stringResource(
+                            R.string.sleep_week_average,
+                            formatSleepMinutes(it.roundToInt().toLong())
+                        ),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -163,7 +224,7 @@ fun SleepScreen(viewModel: SleepViewModel) {
                 SleepWeeklyChart(state.weeklyNights)
                 state.weeklyInsight?.let {
                     Text(
-                        it,
+                        stringResource(it),
                         style = MaterialTheme.typography.bodyMedium,
                         color = AppColors.TextSecondary
                     )
@@ -182,8 +243,8 @@ private fun SleepHero(state: SleepUiState, total: Long) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            StatusPill(status.label, AppColors.SleepViolet)
-            state.durationDelta?.let { DeltaChip(it, "min") }
+            StatusPill(stringResource(status.label), AppColors.SleepViolet)
+            state.durationDelta?.let { DeltaChip(it, stringResource(R.string.unit_min)) }
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -234,7 +295,7 @@ private fun SleepHero(state: SleepUiState, total: Long) {
                 }
             }
         }
-        Text(status.message, style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(status.message), style = MaterialTheme.typography.bodyLarge)
     }
 }
 
@@ -269,10 +330,10 @@ private fun StageRow(stage: SleepStageType, minutes: Long?, inBedMinutes: Long) 
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Box(Modifier.size(10.dp).clip(CircleShape).background(color))
-                Text(stageLabel(stage), style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(stageLabel(stage)), style = MaterialTheme.typography.bodyMedium)
                 if (minutes != null) {
                     Text(
-                        "${(fraction * 100).roundToInt()}%",
+                        stringResource(R.string.sleep_stage_share, (fraction * 100).roundToInt()),
                         style = MaterialTheme.typography.bodyMedium,
                         color = color,
                         fontWeight = FontWeight.SemiBold
@@ -280,7 +341,7 @@ private fun StageRow(stage: SleepStageType, minutes: Long?, inBedMinutes: Long) 
                 }
             }
             Text(
-                minutes?.let(::formatSleepMinutes) ?: "—",
+                if (minutes == null) "—" else formatSleepMinutes(minutes),
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppColors.TextSecondary,
                 fontWeight = FontWeight.SemiBold
@@ -298,4 +359,6 @@ private fun StageRow(stage: SleepStageType, minutes: Long?, inBedMinutes: Long) 
     }
 }
 
-private fun formatSleepMinutes(minutes: Long): String = "${minutes / 60}h ${minutes % 60}m"
+@Composable
+private fun formatSleepMinutes(minutes: Long): String =
+    stringResource(R.string.duration_hours_minutes, minutes / 60, minutes % 60)

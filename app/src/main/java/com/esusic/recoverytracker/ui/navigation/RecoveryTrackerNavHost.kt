@@ -1,7 +1,17 @@
 package com.esusic.recoverytracker.ui.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -10,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -24,6 +35,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -44,6 +59,8 @@ import com.esusic.recoverytracker.ui.detail.MetricDetailViewModel
 import com.esusic.recoverytracker.ui.detail.MetricType
 import com.esusic.recoverytracker.ui.date.SelectedDayStore
 import com.esusic.recoverytracker.ui.home.HomeScreen
+import com.esusic.recoverytracker.ui.journal.JournalScreen
+import com.esusic.recoverytracker.ui.journal.JournalViewModel
 import com.esusic.recoverytracker.ui.onboarding.OnboardingScreen
 import com.esusic.recoverytracker.ui.onboarding.OnboardingViewModel
 import com.esusic.recoverytracker.ui.recovery.RecoveryDetailScreen
@@ -61,6 +78,21 @@ private const val AGE_ROUTE = "age"
 private const val RECOVERY_ROUTE = "recovery/{date}"
 private const val DETAIL_ROUTE = "detail/{metricType}"
 
+private val ROOT_ENTER: EnterTransition = fadeIn(animationSpec = tween(durationMillis = 220))
+private val ROOT_EXIT: ExitTransition = fadeOut(animationSpec = tween(durationMillis = 180))
+private val DETAIL_ENTER: EnterTransition =
+    fadeIn(animationSpec = tween(durationMillis = 260)) +
+        slideInHorizontally(animationSpec = tween(durationMillis = 260)) { width -> width / 8 }
+private val DETAIL_EXIT: ExitTransition =
+    fadeOut(animationSpec = tween(durationMillis = 200)) +
+        slideOutHorizontally(animationSpec = tween(durationMillis = 200)) { width -> -width / 12 }
+private val DETAIL_POP_ENTER: EnterTransition =
+    fadeIn(animationSpec = tween(durationMillis = 260)) +
+        slideInHorizontally(animationSpec = tween(durationMillis = 260)) { width -> -width / 12 }
+private val DETAIL_POP_EXIT: ExitTransition =
+    fadeOut(animationSpec = tween(durationMillis = 200)) +
+        slideOutHorizontally(animationSpec = tween(durationMillis = 200)) { width -> width / 8 }
+
 @Composable
 fun RecoveryTrackerNavHost(startDestination: String) {
     val navController = rememberNavController()
@@ -68,6 +100,7 @@ fun RecoveryTrackerNavHost(startDestination: String) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
     val showBottomBar = shouldShowBottomBar(currentDestination?.route)
+    val haptics = LocalHapticFeedback.current
 
     Scaffold(
         containerColor = AppColors.Canvas,
@@ -97,14 +130,17 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                                 val accent = rootAccent(destination)
                                 NavigationBarItem(
                                     selected = selected,
-                                    onClick = { navController.navigateRoot(destination) },
+                                    onClick = {
+                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        navController.navigateRoot(destination)
+                                    },
                                     icon = {
                                         Icon(
                                             rootIcon(destination),
-                                            contentDescription = destination.label
+                                            contentDescription = stringResource(destination.label)
                                         )
                                     },
-                                    label = { Text(destination.label) },
+                                    label = { Text(stringResource(destination.label)) },
                                     colors = NavigationBarItemDefaults.colors(
                                         indicatorColor = accent.copy(alpha = 0.18f),
                                         selectedIconColor = accent,
@@ -120,10 +156,24 @@ fun RecoveryTrackerNavHost(startDestination: String) {
             }
         }
     ) { innerPadding ->
+        val layoutDirection = LocalLayoutDirection.current
+        // The bottom inset is handed to each screen as extra scroll content padding instead of
+        // being clipped off here, so root content glides under the translucent pill nav bar.
+        val bottomInset = innerPadding.calculateBottomPadding()
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection),
+                    top = innerPadding.calculateTopPadding(),
+                    end = innerPadding.calculateEndPadding(layoutDirection)
+                )
+            ),
+            enterTransition = { ROOT_ENTER },
+            exitTransition = { ROOT_EXIT },
+            popEnterTransition = { ROOT_ENTER },
+            popExitTransition = { ROOT_EXIT }
         ) {
             composable(ONBOARDING_ROUTE) {
                 val onboardingViewModel = viewModel<OnboardingViewModel> {
@@ -132,9 +182,11 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                         ServiceLocator.healthDataSource
                     )
                 }
-                OnboardingScreen(onboardingViewModel) {
-                    navController.navigate(RootDestination.HOME.route) {
-                        popUpTo(ONBOARDING_ROUTE) { inclusive = true }
+                Box(modifier = Modifier.padding(bottom = bottomInset)) {
+                    OnboardingScreen(onboardingViewModel) {
+                        navController.navigate(RootDestination.HOME.route) {
+                            popUpTo(ONBOARDING_ROUTE) { inclusive = true }
+                        }
                     }
                 }
             }
@@ -154,7 +206,8 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                     onOpenSleep = { navController.navigateRoot(RootDestination.SLEEP) },
                     onOpenActivity = { navController.navigateRoot(RootDestination.ACTIVITY) },
                     onOpenMetric = { metric -> navController.navigate("detail/${metric.name}") },
-                    onOpenAge = { navController.navigate(AGE_ROUTE) }
+                    onOpenAge = { navController.navigate(AGE_ROUTE) },
+                    contentBottomPadding = bottomInset
                 )
             }
 
@@ -162,7 +215,7 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                 val sleepViewModel = viewModel<SleepViewModel> {
                     SleepViewModel(ServiceLocator.repository, selectedDayStore)
                 }
-                SleepScreen(sleepViewModel)
+                SleepScreen(sleepViewModel, contentBottomPadding = bottomInset)
             }
 
             composable(RootDestination.ACTIVITY.route) {
@@ -173,7 +226,18 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                         selectedDayStore = selectedDayStore
                     )
                 }
-                ActivityScreen(activityViewModel)
+                ActivityScreen(activityViewModel, contentBottomPadding = bottomInset)
+            }
+
+            composable(RootDestination.JOURNAL.route) {
+                val journalViewModel = viewModel<JournalViewModel> {
+                    JournalViewModel(
+                        ServiceLocator.journalEntryDao,
+                        ServiceLocator.dailyScoreDao,
+                        selectedDayStore = selectedDayStore
+                    )
+                }
+                JournalScreen(journalViewModel, contentBottomPadding = bottomInset)
             }
 
             composable(RootDestination.ACCOUNT.route) {
@@ -185,37 +249,56 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                 }
                 AccountScreen(
                     viewModel = accountViewModel,
-                    onOpenAge = { navController.navigate(AGE_ROUTE) }
+                    onOpenAge = { navController.navigate(AGE_ROUTE) },
+                    contentBottomPadding = bottomInset
                 )
             }
 
             composable(
                 RECOVERY_ROUTE,
-                arguments = listOf(navArgument("date") { type = NavType.StringType })
+                arguments = listOf(navArgument("date") { type = NavType.StringType }),
+                enterTransition = { DETAIL_ENTER },
+                exitTransition = { DETAIL_EXIT },
+                popEnterTransition = { DETAIL_POP_ENTER },
+                popExitTransition = { DETAIL_POP_EXIT }
             ) { entry ->
                 val date = LocalDate.parse(requireNotNull(entry.arguments?.getString("date")))
                 val recoveryViewModel = viewModel<RecoveryDetailViewModel>(key = date.toString()) {
                     RecoveryDetailViewModel(ServiceLocator.repository, date)
                 }
-                RecoveryDetailScreen(
-                    viewModel = recoveryViewModel,
-                    onBack = navController::popBackStack
-                )
+                Box(modifier = Modifier.padding(bottom = bottomInset)) {
+                    RecoveryDetailScreen(
+                        viewModel = recoveryViewModel,
+                        onBack = navController::popBackStack
+                    )
+                }
             }
 
-            composable(AGE_ROUTE) {
+            composable(
+                AGE_ROUTE,
+                enterTransition = { DETAIL_ENTER },
+                exitTransition = { DETAIL_EXIT },
+                popEnterTransition = { DETAIL_POP_ENTER },
+                popExitTransition = { DETAIL_POP_EXIT }
+            ) {
                 val ageViewModel = viewModel<VitalAgeViewModel> {
                     VitalAgeViewModel(
                         ServiceLocator.repository,
                         ServiceLocator.userPreferencesRepository
                     )
                 }
-                VitalAgeScreen(ageViewModel, onBack = navController::popBackStack)
+                Box(modifier = Modifier.padding(bottom = bottomInset)) {
+                    VitalAgeScreen(ageViewModel, onBack = navController::popBackStack)
+                }
             }
 
             composable(
                 DETAIL_ROUTE,
-                arguments = listOf(navArgument("metricType") { type = NavType.StringType })
+                arguments = listOf(navArgument("metricType") { type = NavType.StringType }),
+                enterTransition = { DETAIL_ENTER },
+                exitTransition = { DETAIL_EXIT },
+                popEnterTransition = { DETAIL_POP_ENTER },
+                popExitTransition = { DETAIL_POP_EXIT }
             ) { entry ->
                 val metricType = MetricType.valueOf(
                     entry.arguments?.getString("metricType") ?: MetricType.HEART_RATE.name
@@ -223,11 +306,13 @@ fun RecoveryTrackerNavHost(startDestination: String) {
                 val detailViewModel = viewModel<MetricDetailViewModel>(key = metricType.name) {
                     MetricDetailViewModel(ServiceLocator.repository, metricType)
                 }
-                MetricDetailScreen(
-                    viewModel = detailViewModel,
-                    metricType = metricType,
-                    onBack = navController::popBackStack
-                )
+                Box(modifier = Modifier.padding(bottom = bottomInset)) {
+                    MetricDetailScreen(
+                        viewModel = detailViewModel,
+                        metricType = metricType,
+                        onBack = navController::popBackStack
+                    )
+                }
             }
         }
     }
@@ -245,6 +330,7 @@ private fun rootIcon(destination: RootDestination): ImageVector = when (destinat
     RootDestination.HOME -> Icons.Filled.Home
     RootDestination.SLEEP -> Icons.Filled.Bedtime
     RootDestination.ACTIVITY -> Icons.AutoMirrored.Filled.DirectionsRun
+    RootDestination.JOURNAL -> Icons.Filled.EditNote
     RootDestination.ACCOUNT -> Icons.Filled.Person
 }
 
@@ -252,5 +338,6 @@ private fun rootAccent(destination: RootDestination) = when (destination) {
     RootDestination.HOME -> AppColors.Recovery
     RootDestination.SLEEP -> AppColors.SleepViolet
     RootDestination.ACTIVITY -> AppColors.ActivityCyan
+    RootDestination.JOURNAL -> AppColors.Journal
     RootDestination.ACCOUNT -> AppColors.Hrv
 }

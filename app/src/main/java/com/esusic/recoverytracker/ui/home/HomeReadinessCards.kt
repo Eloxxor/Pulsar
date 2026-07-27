@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,20 +20,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.esusic.recoverytracker.R
+import com.esusic.recoverytracker.ui.common.SkeletonBox
 import com.esusic.recoverytracker.ui.common.StatusPill
+import com.esusic.recoverytracker.ui.common.animatedValue
 import com.esusic.recoverytracker.ui.common.neonSurface
 import com.esusic.recoverytracker.ui.presentation.effortStatus
 import com.esusic.recoverytracker.ui.presentation.recoveryStatus
 import com.esusic.recoverytracker.ui.presentation.sleepStatus
 import com.esusic.recoverytracker.ui.presentation.todayRecommendation
 import com.esusic.recoverytracker.ui.theme.AppColors
+import com.esusic.recoverytracker.ui.theme.recoveryAccent
 import com.esusic.recoverytracker.ui.today.TodayUiState
 import com.esusic.recoverytracker.ui.today.CircularGauge
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 enum class ReadinessLayout { ASYMMETRIC, STACKED }
 
@@ -54,28 +63,28 @@ fun ReadinessCluster(
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val fontScale = LocalDensity.current.fontScale
         if (readinessLayoutFor(maxWidth.value.toInt(), fontScale) == ReadinessLayout.STACKED) {
-            val recoveryHeight = if (fontScale > 1.15f) 340.dp else 300.dp
-            val compactHeight = if (fontScale > 1.15f) 210.dp else 180.dp
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 RecoveryHeroCard(
                     state = state,
                     onClick = onRecoveryClick,
-                    modifier = Modifier.fillMaxWidth().height(recoveryHeight)
+                    modifier = Modifier.fillMaxWidth()
                 )
                 EffortCard(
                     state = state,
                     onClick = onEffortClick,
-                    modifier = Modifier.fillMaxWidth().height(compactHeight)
+                    modifier = Modifier.fillMaxWidth()
                 )
                 SleepCard(
                     state = state,
                     onClick = onSleepClick,
-                    modifier = Modifier.fillMaxWidth().height(compactHeight)
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         } else {
+            // Height follows the tallest card's own content. A fixed height silently clipped the
+            // recovery recommendation once the copy ran past two lines.
             Row(
-                modifier = Modifier.fillMaxWidth().height(360.dp),
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 RecoveryHeroCard(
@@ -104,19 +113,71 @@ fun ReadinessCluster(
 }
 
 @Composable
+fun ReadinessClusterSkeleton(modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val fontScale = LocalDensity.current.fontScale
+        if (readinessLayoutFor(maxWidth.value.toInt(), fontScale) == ReadinessLayout.STACKED) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SkeletonBox(
+                    modifier = Modifier.fillMaxWidth().height(stackedRecoveryHeight(fontScale)),
+                    shape = RoundedCornerShape(26.dp)
+                )
+                SkeletonBox(
+                    modifier = Modifier.fillMaxWidth().height(stackedCompactHeight(fontScale)),
+                    shape = RoundedCornerShape(24.dp)
+                )
+                SkeletonBox(
+                    modifier = Modifier.fillMaxWidth().height(stackedCompactHeight(fontScale)),
+                    shape = RoundedCornerShape(24.dp)
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth().height(360.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SkeletonBox(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RoundedCornerShape(26.dp)
+                )
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    SkeletonBox(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp)
+                    )
+                    SkeletonBox(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun stackedRecoveryHeight(fontScale: Float) = if (fontScale > 1.15f) 340.dp else 300.dp
+
+private fun stackedCompactHeight(fontScale: Float) = if (fontScale > 1.15f) 210.dp else 180.dp
+
+@Composable
 private fun RecoveryHeroCard(
     state: TodayUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val status = recoveryStatus(state.recoveryValue, state.isCalibrating)
-    val accent = recoveryColor(state.recoveryValue)
+    val accent = recoveryAccent(state.recoveryValue)
+    val animatedRecovery = animatedValue(state.recoveryValue?.toFloat())
     val shape = RoundedCornerShape(26.dp)
+    val cardDescription = stringResource(R.string.home_recovery_card_description)
     Card(
         onClick = onClick,
         modifier = modifier
             .neonSurface(shape, accent, glowAlpha = 0.24f)
-            .semantics { contentDescription = "Recovery card" },
+            .semantics { contentDescription = cardDescription },
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
@@ -126,11 +187,11 @@ private fun RecoveryHeroCard(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Recovery",
+                    stringResource(R.string.home_recovery_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = accent
                 )
-                StatusPill(status.label, accent)
+                StatusPill(stringResource(status.label), accent)
             }
             CircularGauge(
                 value = state.recoveryValue?.toFloat() ?: 0f,
@@ -144,7 +205,7 @@ private fun RecoveryHeroCard(
                     Text(
                         text = when {
                             state.isCalibrating -> "…"
-                            state.recoveryValue != null -> state.recoveryValue.toString()
+                            state.recoveryValue != null -> animatedRecovery.roundToInt().toString()
                             else -> "—"
                         },
                         fontSize = 48.sp,
@@ -164,19 +225,25 @@ private fun RecoveryHeroCard(
             }
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text(
-                    text = status.message,
+                    text = stringResource(status.message),
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = todayRecommendation(
-                        recovery = state.recoveryValue,
-                        strain = state.strainValue,
-                        sleep = state.sleepPerformance,
-                        calibrating = state.isCalibrating
+                    text = stringResource(
+                        todayRecommendation(
+                            recovery = state.recoveryValue,
+                            strain = state.strainValue,
+                            sleep = state.sleepPerformance,
+                            calibrating = state.isCalibrating
+                        )
                     ),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = AppColors.TextSecondary
+                    color = AppColors.TextSecondary,
+                    maxLines = 5,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -190,14 +257,15 @@ private fun EffortCard(
     modifier: Modifier = Modifier
 ) {
     val status = effortStatus(state.strainValue)
+    val animatedStrain = animatedValue(state.strainValue?.toFloat())
     CompactReadinessCard(
-        label = "Effort",
-        value = state.strainValue?.let { "%.1f".format(it) } ?: "—",
-        unit = if (state.strainValue != null) "/ 21" else null,
-        status = status.label,
-        supporting = status.message,
+        label = stringResource(R.string.home_effort_title),
+        value = state.strainValue?.let { "%.1f".format(animatedStrain) } ?: "—",
+        unit = if (state.strainValue != null) stringResource(R.string.home_effort_scale) else null,
+        status = stringResource(status.label),
+        supporting = stringResource(status.message),
         accent = AppColors.ActivityCyan,
-        semanticsLabel = "Effort card",
+        semanticsLabel = stringResource(R.string.home_effort_card_description),
         onClick = onClick,
         modifier = modifier
     )
@@ -210,14 +278,15 @@ private fun SleepCard(
     modifier: Modifier = Modifier
 ) {
     val status = sleepStatus(state.sleepPerformance)
+    val animatedSleep = animatedValue(state.sleepDurationMinutes?.toFloat())
     CompactReadinessCard(
-        label = "Sleep",
-        value = state.sleepDurationMinutes?.let(::formatMinutes) ?: "—",
-        unit = state.sleepPerformance?.let { "$it%" },
-        status = status.label,
-        supporting = status.message,
+        label = stringResource(R.string.home_sleep_title),
+        value = state.sleepDurationMinutes?.let { formatMinutes(animatedSleep.roundToLong()) } ?: "—",
+        unit = state.sleepPerformance?.let { stringResource(R.string.home_sleep_performance, it) },
+        status = stringResource(status.label),
+        supporting = stringResource(status.message),
         accent = AppColors.SleepViolet,
-        semanticsLabel = "Sleep card",
+        semanticsLabel = stringResource(R.string.home_sleep_card_description),
         onClick = onClick,
         modifier = modifier
     )
@@ -282,11 +351,6 @@ private fun CompactReadinessCard(
     }
 }
 
-private fun recoveryColor(score: Int?) = when {
-    score == null -> AppColors.TextMuted
-    score >= 60 -> AppColors.Recovery
-    score >= 40 -> AppColors.Warning
-    else -> AppColors.Danger
-}
-
-internal fun formatMinutes(minutes: Long): String = "${minutes / 60}h ${minutes % 60}m"
+@Composable
+internal fun formatMinutes(minutes: Long): String =
+    stringResource(R.string.duration_hours_minutes, minutes / 60, minutes % 60)

@@ -1,5 +1,6 @@
 package com.esusic.recoverytracker.ui.common
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -8,9 +9,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.esusic.recoverytracker.R
 import com.esusic.recoverytracker.model.DeltaKind
 import com.esusic.recoverytracker.model.MetricDelta
 import com.esusic.recoverytracker.ui.theme.AppColors
@@ -22,20 +25,25 @@ fun DeltaChip(
     unit: String,
     modifier: Modifier = Modifier,
     decimals: Int = 0,
-    suffix: String = "vs 30d"
+    @StringRes suffix: Int = R.string.trend_delta_suffix_month
 ) {
     if (delta == null) return
-    val color = when (delta.kind) {
-        DeltaKind.BETTER -> AppColors.Recovery
-        DeltaKind.WORSE -> AppColors.Danger
-        DeltaKind.NEUTRAL -> AppColors.TextSecondary
+    val magnitude = "%.${decimals}f".format(abs(delta.diff))
+    // A difference too small to survive rounding must not be dressed up as a direction:
+    // "▲ 0" in danger red reads as a regression that the number itself contradicts.
+    val belowPrecision = magnitude.none { it in '1'..'9' }
+    val color = when {
+        belowPrecision -> AppColors.TextSecondary
+        delta.kind == DeltaKind.BETTER -> AppColors.Recovery
+        delta.kind == DeltaKind.WORSE -> AppColors.Danger
+        else -> AppColors.TextSecondary
     }
     val arrow = when {
+        belowPrecision -> "—"
         delta.diff > 0 -> "▲"
         delta.diff < 0 -> "▼"
         else -> "—"
     }
-    val magnitude = "%.${decimals}f".format(abs(delta.diff))
     val valueText = if (unit.isEmpty()) magnitude else "$magnitude $unit"
     Box(
         modifier = modifier
@@ -44,7 +52,7 @@ fun DeltaChip(
             .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
         Text(
-            text = "$arrow $valueText $suffix",
+            text = "$arrow $valueText ${stringResource(suffix)}",
             color = color,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold

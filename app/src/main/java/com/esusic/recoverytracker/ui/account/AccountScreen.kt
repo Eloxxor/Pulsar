@@ -1,6 +1,7 @@
 package com.esusic.recoverytracker.ui.account
 
 import android.content.Intent
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,80 +38,140 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.annotation.StringRes
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.HealthConnectClient
+import com.esusic.recoverytracker.R
+import com.esusic.recoverytracker.ServiceLocator
+import com.esusic.recoverytracker.export.CsvExporter
+import com.esusic.recoverytracker.export.HealthDataExporter
+import com.esusic.recoverytracker.sync.RecoveryNotifications
 import com.esusic.recoverytracker.ui.common.RootPageHeader
 import com.esusic.recoverytracker.ui.common.SectionCard
 import com.esusic.recoverytracker.ui.common.StatusPill
 import com.esusic.recoverytracker.ui.theme.AppColors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
 private val trackedCategories = listOf(
-    "Heart rate",
-    "Heart rate variability",
-    "Resting heart rate",
-    "Sleep",
-    "Steps",
-    "Active calories",
-    "Exercise",
-    "Respiratory rate",
-    "Blood oxygen",
-    "Skin temperature"
+    R.string.account_category_heart_rate,
+    R.string.account_category_hrv,
+    R.string.account_category_resting_heart_rate,
+    R.string.account_category_sleep,
+    R.string.account_category_steps,
+    R.string.account_category_active_calories,
+    R.string.account_category_exercise,
+    R.string.account_category_respiratory_rate,
+    R.string.account_category_blood_oxygen,
+    R.string.account_category_skin_temperature
 )
 
 @Composable
 fun AccountScreen(
     viewModel: AccountViewModel,
-    onOpenAge: () -> Unit
+    onOpenAge: () -> Unit,
+    contentBottomPadding: Dp = 0.dp
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showBirthYearDialog by remember { mutableStateOf(false) }
+    var exportStatus by remember { mutableStateOf<Int?>(null) }
+    var notificationsEnabled by remember { mutableStateOf(RecoveryNotifications.canPost(context)) }
     val healthSettingsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { viewModel.refreshPermissions() }
+    val notificationSettingsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { notificationsEnabled = RecoveryNotifications.canPost(context) }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = result.data?.data
+        if (uri == null) {
+            exportStatus = null
+            return@rememberLauncherForActivityResult
+        }
+        exportStatus = R.string.account_export_in_progress
+        scope.launch {
+            exportStatus = try {
+                withContext(Dispatchers.IO) {
+                    val csv = HealthDataExporter(ServiceLocator.repository).buildCsv()
+                    CsvExporter.writeTo(context.contentResolver, uri, csv)
+                }
+                R.string.account_export_saved
+            } catch (e: Exception) {
+                R.string.account_export_failed
+            }
+        }
+    }
 
-    LaunchedEffect(Unit) { viewModel.refreshPermissions() }
+    LaunchedEffect(Unit) {
+        viewModel.refreshPermissions()
+        notificationsEnabled = RecoveryNotifications.canPost(context)
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppColors.Canvas)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 24.dp),
+            .padding(
+                start = 20.dp,
+                end = 20.dp,
+                top = 24.dp,
+                bottom = 24.dp + contentBottomPadding
+            ),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        RootPageHeader(title = "Account", subtitle = "Local profile")
+        RootPageHeader(
+            title = stringResource(R.string.account_title),
+            subtitle = stringResource(R.string.account_subtitle)
+        )
 
-        SectionCard(title = "Profile") {
+        SectionCard(title = stringResource(R.string.account_profile_title)) {
             AccountValueRow(
-                label = "Birth year",
-                value = state.birthYear?.toString() ?: "Not set"
+                label = stringResource(R.string.account_birth_year),
+                value = state.birthYear?.toString() ?: stringResource(R.string.account_not_set)
             )
             AccountValueRow(
-                label = "Chronological age",
-                value = state.age?.let { "$it years" } ?: "Not available"
+                label = stringResource(R.string.account_chronological_age),
+                value = state.age?.let { pluralStringResource(R.plurals.account_age_years, it, it) }
+                    ?: stringResource(R.string.account_not_available)
             )
             OutlinedButton(
                 onClick = { showBirthYearDialog = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (state.birthYear == null) "Add birth year" else "Edit birth year")
+                Text(
+                    if (state.birthYear == null) {
+                        stringResource(R.string.account_add_birth_year)
+                    } else {
+                        stringResource(R.string.account_edit_birth_year)
+                    }
+                )
             }
         }
 
+        val openVitalAge = stringResource(R.string.account_open_vital_age)
         SectionCard(
-            title = "Vital Age",
+            title = stringResource(R.string.account_vital_age_title),
             modifier = Modifier
-                .semantics { contentDescription = "Open Vital Age" }
+                .semantics { contentDescription = openVitalAge }
                 .clickable(onClick = onOpenAge)
         ) {
             Row(
@@ -122,12 +184,12 @@ fun AccountScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Your long-term health trend",
+                        stringResource(R.string.account_vital_age_headline),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "See how recent recovery signals compare with your age.",
+                        stringResource(R.string.account_vital_age_body),
                         style = MaterialTheme.typography.bodyMedium,
                         color = AppColors.TextSecondary
                     )
@@ -140,7 +202,7 @@ fun AccountScreen(
             }
         }
 
-        SectionCard(title = "Health Connect") {
+        SectionCard(title = stringResource(R.string.account_health_connect_title)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -156,21 +218,29 @@ fun AccountScreen(
                         tint = if (state.healthConnectConnected) AppColors.Recovery else AppColors.Warning
                     )
                     Text(
-                        if (state.healthConnectConnected) "Connected" else "Needs attention",
+                        if (state.healthConnectConnected) {
+                            stringResource(R.string.account_health_connect_connected)
+                        } else {
+                            stringResource(R.string.account_health_connect_needs_attention)
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 StatusPill(
-                    label = if (state.healthConnectConnected) "Ready" else "Review",
+                    label = if (state.healthConnectConnected) {
+                        stringResource(R.string.account_health_connect_ready)
+                    } else {
+                        stringResource(R.string.account_health_connect_review)
+                    },
                     color = if (state.healthConnectConnected) AppColors.Recovery else AppColors.Warning
                 )
             }
             Text(
                 if (state.healthConnectConnected) {
-                    "Recovery Tracker can read the selected health categories."
+                    stringResource(R.string.account_health_connect_connected_body)
                 } else {
-                    "Review Health Connect access to keep your dashboard current."
+                    stringResource(R.string.account_health_connect_review_body)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppColors.TextSecondary
@@ -181,15 +251,64 @@ fun AccountScreen(
                         Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
                     )
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppColors.Recovery,
+                    contentColor = AppColors.Canvas
+                )
             ) {
-                Text("Manage Health Connect")
+                Text(
+                    stringResource(R.string.account_manage_health_connect),
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
 
-        SectionCard(title = "Data used") {
+        SectionCard(title = stringResource(R.string.account_notifications_title)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    stringResource(R.string.account_morning_summary),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                StatusPill(
+                    label = if (notificationsEnabled) {
+                        stringResource(R.string.account_notifications_on)
+                    } else {
+                        stringResource(R.string.account_notifications_off)
+                    },
+                    color = if (notificationsEnabled) AppColors.Recovery else AppColors.Warning
+                )
+            }
             Text(
-                "Only categories used by your scores and trends are requested.",
+                stringResource(R.string.account_morning_summary_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = AppColors.TextSecondary
+            )
+            if (!notificationsEnabled) {
+                OutlinedButton(
+                    onClick = {
+                        // A runtime request is a no-op once the user has blocked the channel,
+                        // so send them where the decision can actually be reversed.
+                        notificationSettingsLauncher.launch(
+                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.account_enable_notifications))
+                }
+            }
+        }
+
+        SectionCard(title = stringResource(R.string.account_data_used_title)) {
+            Text(
+                stringResource(R.string.account_data_used_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppColors.TextSecondary
             )
@@ -206,7 +325,7 @@ fun AccountScreen(
             }
         }
 
-        SectionCard(title = "Privacy") {
+        SectionCard(title = stringResource(R.string.account_privacy_title)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.Top
@@ -214,12 +333,12 @@ fun AccountScreen(
                 Icon(Icons.Default.Lock, contentDescription = null, tint = AppColors.Hrv)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "Processed locally",
+                        stringResource(R.string.account_privacy_headline),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "Your health data is read from Health Connect and processed on this device. No account or cloud sync is required.",
+                        stringResource(R.string.account_privacy_body),
                         style = MaterialTheme.typography.bodyMedium,
                         color = AppColors.TextSecondary
                     )
@@ -227,9 +346,41 @@ fun AccountScreen(
             }
         }
 
+        SectionCard(title = stringResource(R.string.account_your_data_title)) {
+            Text(
+                stringResource(R.string.account_export_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = AppColors.TextSecondary
+            )
+            OutlinedButton(
+                onClick = {
+                    exportStatus = null
+                    exportLauncher.launch(
+                        CsvExporter.createDocumentIntent(
+                            CsvExporter.defaultFileName(LocalDate.now())
+                        )
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.account_export_button))
+            }
+            exportStatus?.let {
+                Text(
+                    stringResource(it),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (it == R.string.account_export_failed) {
+                        AppColors.Danger
+                    } else {
+                        AppColors.Recovery
+                    }
+                )
+            }
+        }
+
         HorizontalDivider(color = AppColors.GridLine)
         Text(
-            "Recovery Tracker  ·  Version 1.0",
+            stringResource(R.string.account_version),
             style = MaterialTheme.typography.bodySmall,
             color = AppColors.TextMuted,
             modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -262,7 +413,7 @@ private fun AccountValueRow(label: String, value: String) {
 }
 
 @Composable
-private fun DataCategory(label: String, modifier: Modifier = Modifier) {
+private fun DataCategory(@StringRes label: Int, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(7.dp),
@@ -274,7 +425,11 @@ private fun DataCategory(label: String, modifier: Modifier = Modifier) {
             tint = AppColors.Hrv,
             modifier = Modifier.height(16.dp)
         )
-        Text(label, style = MaterialTheme.typography.bodySmall, color = AppColors.TextSecondary)
+        Text(
+            stringResource(label),
+            style = MaterialTheme.typography.bodySmall,
+            color = AppColors.TextSecondary
+        )
     }
 }
 
@@ -291,18 +446,18 @@ private fun BirthYearDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Birth year") },
+        title = { Text(stringResource(R.string.account_birth_year)) },
         text = {
             OutlinedTextField(
                 value = input,
                 onValueChange = { input = it.filter(Char::isDigit).take(4) },
-                label = { Text("Year") },
+                label = { Text(stringResource(R.string.account_year_label)) },
                 supportingText = {
                     Text(
                         if (input.isNotEmpty() && !isValid) {
-                            "Enter a year between 1900 and ${LocalDate.now().year}."
+                            stringResource(R.string.account_year_error, LocalDate.now().year)
                         } else {
-                            "Used only to calculate age-based context."
+                            stringResource(R.string.account_year_help)
                         }
                     )
                 },
@@ -316,9 +471,11 @@ private fun BirthYearDialog(
                 onClick = { parsed?.let(onSave) },
                 enabled = isValid
             ) {
-                Text("Save")
+                Text(stringResource(R.string.account_save))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.account_cancel)) }
+        }
     )
 }

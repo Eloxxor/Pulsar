@@ -11,6 +11,7 @@ import com.esusic.recoverytracker.data.local.AppDatabase
 import com.esusic.recoverytracker.data.prefs.UserPreferencesRepository
 import com.esusic.recoverytracker.model.HeartRateSample
 import com.esusic.recoverytracker.model.RestingHrSample
+import com.esusic.recoverytracker.ui.common.TrendRange
 import com.esusic.recoverytracker.ui.date.SelectedDayStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -87,10 +88,10 @@ class ActivityViewModelTest {
         )
         val viewModel = ActivityViewModel(repository, source, fixedClock)
 
-        viewModel.selectRange(ActivityRange.MONTH)
+        viewModel.selectRange(TrendRange.MONTH)
         viewModel.uiState.filter { it.recovery.points.size == 2 }.first()
 
-        assertEquals(ActivityRange.MONTH, viewModel.uiState.value.range)
+        assertEquals(TrendRange.MONTH, viewModel.uiState.value.range)
         assertEquals(
             viewModel.uiState.value.recovery.points.sortedBy { it.date },
             viewModel.uiState.value.recovery.points

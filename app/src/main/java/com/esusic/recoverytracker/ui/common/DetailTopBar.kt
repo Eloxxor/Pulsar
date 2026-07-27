@@ -11,7 +11,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.esusic.recoverytracker.R
 import com.esusic.recoverytracker.ui.theme.AppColors
 
 // Back arrow on the left, centered title — the header used by drill-in pages.
@@ -21,7 +23,7 @@ fun DetailTopBar(title: String, onBack: () -> Unit) {
         IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = "Back",
+                contentDescription = stringResource(R.string.common_back),
                 tint = AppColors.TextPrimary
             )
         }

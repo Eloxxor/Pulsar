@@ -17,18 +17,21 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.esusic.recoverytracker.R
 import com.esusic.recoverytracker.ui.common.DetailTopBar
 import com.esusic.recoverytracker.ui.common.SectionCard
 import com.esusic.recoverytracker.ui.common.StatusPill
+import com.esusic.recoverytracker.ui.common.rememberDateFormatter
 import com.esusic.recoverytracker.ui.presentation.recoveryStatus
 import com.esusic.recoverytracker.ui.presentation.todayRecommendation
 import com.esusic.recoverytracker.ui.theme.AppColors
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import com.esusic.recoverytracker.ui.theme.recoveryAccent
 
 @Composable
 fun RecoveryDetailScreen(
@@ -37,7 +40,8 @@ fun RecoveryDetailScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val status = recoveryStatus(state.recoveryValue, state.isCalibrating)
-    val accent = recoveryColor(state.recoveryValue)
+    val accent = recoveryAccent(state.recoveryValue)
+    val dateFormatter = rememberDateFormatter(R.string.date_pattern_weekday_month_day)
 
     Column(
         modifier = Modifier
@@ -47,16 +51,16 @@ fun RecoveryDetailScreen(
             .padding(horizontal = 20.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        DetailTopBar(title = "Recovery", onBack = onBack)
+        DetailTopBar(title = stringResource(R.string.recovery_detail_title), onBack = onBack)
         Text(
-            state.date.format(DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.ENGLISH)),
+            state.date.format(dateFormatter),
             style = MaterialTheme.typography.bodyMedium,
             color = AppColors.TextSecondary,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
         SectionCard {
-            StatusPill(status.label, accent)
+            StatusPill(stringResource(status.label), accent)
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = when {
@@ -80,49 +84,51 @@ fun RecoveryDetailScreen(
                 }
             }
             Text(
-                status.message,
+                stringResource(status.message),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
         }
 
         Text(
-            "Why this score?",
+            stringResource(R.string.recovery_detail_why),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.ExtraBold
         )
         ComponentScoreCard(
-            label = "HRV",
+            label = R.string.recovery_component_hrv,
             score = state.hrvSubScore,
             accent = AppColors.Hrv,
-            explanation = "How your heart-rate variability compares with your personal baseline."
+            explanation = R.string.recovery_component_hrv_explanation
         )
         ComponentScoreCard(
-            label = "Resting heart rate",
+            label = R.string.recovery_component_rhr,
             score = state.rhrSubScore,
             accent = AppColors.Rhr,
-            explanation = "A lower-than-usual resting rate generally supports recovery."
+            explanation = R.string.recovery_component_rhr_explanation
         )
         ComponentScoreCard(
-            label = "Sleep",
+            label = R.string.recovery_component_sleep,
             score = state.sleepSubScore,
             accent = AppColors.SleepViolet,
-            explanation = "Duration and restorative stages compared with your recent nights."
+            explanation = R.string.recovery_component_sleep_explanation
         )
 
-        SectionCard(title = "Today's recommendation") {
+        SectionCard(title = stringResource(R.string.recovery_recommendation_title)) {
             Text(
-                todayRecommendation(
-                    recovery = state.recoveryValue,
-                    strain = null,
-                    sleep = null,
-                    calibrating = state.isCalibrating
+                stringResource(
+                    todayRecommendation(
+                        recovery = state.recoveryValue,
+                        strain = null,
+                        sleep = null,
+                        calibrating = state.isCalibrating
+                    )
                 ),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "Recovery is a training signal, not a medical diagnosis.",
+                stringResource(R.string.recovery_disclaimer),
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppColors.TextSecondary
             )
@@ -132,10 +138,10 @@ fun RecoveryDetailScreen(
 
 @Composable
 private fun ComponentScoreCard(
-    label: String,
+    @StringRes label: Int,
     score: Double?,
     accent: Color,
-    explanation: String
+    @StringRes explanation: Int
 ) {
     SectionCard {
         Row(
@@ -143,9 +149,13 @@ private fun ComponentScoreCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom
         ) {
-            Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(
-                score?.let { "%.0f / 100".format(it) } ?: "—",
+                stringResource(label),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                score?.let { stringResource(R.string.recovery_component_score, it) } ?: "—",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = accent
@@ -158,16 +168,10 @@ private fun ComponentScoreCard(
             trackColor = AppColors.GridLine
         )
         Text(
-            explanation,
+            stringResource(explanation),
             style = MaterialTheme.typography.bodyMedium,
             color = AppColors.TextSecondary
         )
     }
 }
 
-private fun recoveryColor(score: Int?) = when {
-    score == null -> AppColors.TextMuted
-    score >= 60 -> AppColors.Recovery
-    score >= 40 -> AppColors.Warning
-    else -> AppColors.Danger
-}

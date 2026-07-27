@@ -1,3 +1,391 @@
 <resources>
-    <string name="app_name">Recovery Tracker</string>
+    <string name="app_name" translatable="false">Pulsar</string>
+
+    <!-- Shared units and formats -->
+    <string name="unit_ms">ms</string>
+    <string name="unit_bpm">bpm</string>
+    <string name="unit_min">min</string>
+    <string name="unit_percentage_points">pp</string>
+    <string name="unit_celsius">°C</string>
+    <string name="unit_year_short">yr</string>
+    <string name="unit_years_short">yrs</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <!-- Date patterns follow java.time; localised so each language keeps its own field order. -->
+    <string name="date_pattern_weekday_month_day">EEEE, MMM d</string>
+    <string name="date_pattern_month_day">MMM d</string>
+    <string name="date_pattern_day_month_short">d MMM</string>
+    <string name="date_pattern_month_day_time">MMM d, HH:mm</string>
+
+    <!-- Common controls -->
+    <string name="common_back">Back</string>
+    <string name="common_previous_day">Previous day</string>
+    <string name="common_next_day">Next day</string>
+    <string name="common_gauge_calibrating">Score is still calibrating</string>
+
+    <!-- Trends and charts -->
+    <string name="trend_range_days">%1$d days</string>
+    <string name="trend_empty">At least two recorded days are needed for this trend.</string>
+    <string name="trend_delta_suffix_month">vs 30d</string>
+    <string name="trend_delta_suffix_average">vs avg</string>
+    <string name="trend_delta_suffix_baseline">vs baseline</string>
+    <string name="trend_delta_suffix_last_week">vs last week</string>
+    <string name="trend_chart_baseline_marker">avg %1$s</string>
+    <string name="trend_chart_empty_description">%1$s trend chart. Not enough data yet.</string>
+    <string name="trend_chart_description">%1$s trend, %2$d days from %3$s to %4$s. Latest %5$s, lowest %6$s, highest %7$s.</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_sleep">Sleep</string>
+    <string name="nav_activity">Activity</string>
+    <string name="nav_journal">Journal</string>
+    <string name="nav_account">Account</string>
+
+    <!-- Recovery status copy (shared by home, recovery detail, widget and notification) -->
+    <string name="status_recovery_calibrating_label">Learning your baseline</string>
+    <string name="status_recovery_calibrating_message">A few more days will improve this score.</string>
+    <string name="status_recovery_none_label">No score yet</string>
+    <string name="status_recovery_none_message">Sync Health Connect to calculate recovery.</string>
+    <string name="status_recovery_optimal_label">Optimal</string>
+    <string name="status_recovery_optimal_message">You are well recovered.</string>
+    <string name="status_recovery_ready_label">Ready</string>
+    <string name="status_recovery_ready_message">Good capacity for a normal day.</string>
+    <string name="status_recovery_balanced_label">Balanced</string>
+    <string name="status_recovery_balanced_message">Keep intensity controlled.</string>
+    <string name="status_recovery_low_label">Recover</string>
+    <string name="status_recovery_low_message">Prioritize rest and easy movement.</string>
+
+    <!-- Effort status copy -->
+    <string name="status_effort_none_label">No load yet</string>
+    <string name="status_effort_none_message">Activity will appear after the next sync.</string>
+    <string name="status_effort_high_label">High</string>
+    <string name="status_effort_high_message">A demanding day. Leave room for recovery.</string>
+    <string name="status_effort_productive_label">Productive</string>
+    <string name="status_effort_productive_message">Meaningful load without reaching the top range.</string>
+    <string name="status_effort_light_label">Light</string>
+    <string name="status_effort_light_message">Light activity is accumulating.</string>
+    <string name="status_effort_resting_label">Resting</string>
+    <string name="status_effort_resting_message">Your current load is low.</string>
+
+    <!-- Sleep status copy -->
+    <string name="status_sleep_none_label">No score yet</string>
+    <string name="status_sleep_none_message">Sleep detail will appear after a recorded night.</string>
+    <string name="status_sleep_excellent_label">Excellent</string>
+    <string name="status_sleep_excellent_message">Strong duration and sleep quality.</string>
+    <string name="status_sleep_good_label">Good</string>
+    <string name="status_sleep_good_message">A solid night with some room to improve.</string>
+    <string name="status_sleep_fair_label">Fair</string>
+    <string name="status_sleep_fair_message">Protect recovery and aim for more sleep tonight.</string>
+    <string name="status_sleep_low_label">Low</string>
+    <string name="status_sleep_low_message">A lighter day may help you recover.</string>
+
+    <!-- Daily recommendation -->
+    <string name="recommendation_calibrating">Keep wearing your tracker to build a reliable baseline.</string>
+    <string name="recommendation_no_data">Sync your latest health data to get a daily recommendation.</string>
+    <string name="recommendation_rest">Prioritize rest and easy movement today.</string>
+    <string name="recommendation_load_already_high">Your load is already high. Keep the rest of today easy.</string>
+    <string name="recommendation_challenge">You have capacity for a challenging session today.</string>
+    <string name="recommendation_normal_day">A normal training day fits your current recovery.</string>
+    <string name="recommendation_controlled">Choose controlled intensity and reassess how you feel.</string>
+
+    <!-- Home -->
+    <string name="home_today">Today</string>
+    <string name="home_permission_off_title">Health Connect access is off</string>
+    <string name="home_permission_off_body">Stored history is still available. Reconnect from Account to refresh it.</string>
+    <string name="home_recovery_card_description">Recovery card</string>
+    <string name="home_recovery_title">Recovery</string>
+    <string name="home_effort_card_description">Effort card</string>
+    <string name="home_effort_title">Effort</string>
+    <string name="home_effort_scale">/ 21</string>
+    <string name="home_sleep_card_description">Sleep card</string>
+    <string name="home_sleep_title">Sleep</string>
+    <string name="home_sleep_performance">%1$d%%</string>
+    <string name="home_core_metrics">Core metrics</string>
+    <string name="home_metric_hrv">HRV</string>
+    <string name="home_metric_resting_hr">Resting HR</string>
+    <string name="home_baseline_building">Building your baseline</string>
+    <string name="home_baseline_at">At baseline</string>
+    <string name="home_baseline_favorable">Favorable versus baseline</string>
+    <string name="home_baseline_outside">Outside your usual baseline</string>
+    <string name="home_vital_age_title">Vital Age</string>
+    <string name="home_vital_age_card_description">Vital Age card</string>
+    <string name="home_vital_age_learning">Learning</string>
+    <string name="home_vital_age_years">years</string>
+    <string name="home_vital_age_needs_data">A few days of consistent data are needed.</string>
+    <string name="home_vital_age_recent_signals">Based on your recent recovery signals.</string>
+    <string name="home_vital_age_below">%1$.1f years below your chronological age.</string>
+    <string name="home_vital_age_above">%1$.1f years above your chronological age.</string>
+    <string name="home_vital_age_close">Close to your chronological age.</string>
+    <string name="home_more_vitals">More vitals</string>
+    <string name="home_vital_respiratory_rate">Respiratory rate</string>
+    <string name="home_vital_respiratory_rate_value">%1$.1f /min</string>
+    <string name="home_vital_spo2">SpO₂</string>
+    <string name="home_vital_spo2_value">%1$.0f%%</string>
+    <string name="home_vital_skin_temperature">Skin temperature</string>
+    <string name="home_vital_skin_temperature_value">%1$+.1f°C</string>
+    <string name="home_vital_steps">Steps</string>
+    <string name="home_vital_zone_minutes">Zone minutes</string>
+    <string name="home_vital_zone_minutes_value">%1$d min</string>
+    <string name="home_disclaimer">Training context, not medical advice.</string>
+    <string name="home_last_updated">Updated %1$s</string>
+
+    <!-- Recovery detail -->
+    <string name="recovery_detail_title">Recovery</string>
+    <string name="recovery_detail_why">Why this score?</string>
+    <string name="recovery_component_hrv">HRV</string>
+    <string name="recovery_component_hrv_explanation">How your heart-rate variability compares with your personal baseline.</string>
+    <string name="recovery_component_rhr">Resting heart rate</string>
+    <string name="recovery_component_rhr_explanation">A lower-than-usual resting rate generally supports recovery.</string>
+    <string name="recovery_component_sleep">Sleep</string>
+    <string name="recovery_component_sleep_explanation">Duration and restorative stages compared with your recent nights.</string>
+    <string name="recovery_component_score">%1$.0f / 100</string>
+    <string name="recovery_recommendation_title">Today\'s recommendation</string>
+    <string name="recovery_disclaimer">Recovery is a training signal, not a medical diagnosis.</string>
+
+    <!-- Sleep -->
+    <string name="sleep_title">Sleep</string>
+    <string name="sleep_night_of">Night of %1$s</string>
+    <string name="sleep_none_title">No sleep recorded</string>
+    <string name="sleep_none_body">No sleep is available for %1$s.</string>
+    <string name="sleep_timeline_title">Sleep timeline</string>
+    <string name="sleep_restorative">%1$d%% restorative</string>
+    <string name="sleep_stages_title">Sleep stages</string>
+    <string name="sleep_stages_missing">Your source recorded duration without detailed sleep stages.</string>
+    <string name="sleep_stage_share">%1$d%%</string>
+    <string name="sleep_stage_deep">Deep</string>
+    <string name="sleep_stage_rem">REM</string>
+    <string name="sleep_stage_light">Light</string>
+    <string name="sleep_stage_awake">Awake</string>
+    <string name="sleep_stage_unknown">Unknown</string>
+    <string name="sleep_versus_need_title">Hours versus need</string>
+    <string name="sleep_asleep">Asleep</string>
+    <string name="sleep_need">Need</string>
+    <string name="sleep_performance_share">%1$d%% of sleep performance</string>
+    <string name="sleep_wake_events">Wake events</string>
+    <string name="sleep_heart_rate_title">Sleeping heart rate</string>
+    <string name="sleep_heart_rate_bpm">%1$d bpm</string>
+    <string name="sleep_heart_rate_low">low</string>
+    <string name="sleep_heart_rate_avg">avg</string>
+    <string name="sleep_week_title">This week</string>
+    <string name="sleep_week_average">Average %1$s</string>
+    <string name="sleep_week_bar_description">%1$s, %2$d hours %3$d minutes</string>
+    <string name="sleep_insight_improved">Your sleep duration improved this week.</string>
+    <string name="sleep_insight_shorter">Your latest night was shorter than your recent average.</string>
+    <string name="sleep_insight_steady">Your sleep duration is holding steady.</string>
+    <string name="sleep_hypnogram_window">Sleep stages from %1$s to %2$s</string>
+    <string name="sleep_hypnogram_no_detail">%1$s. No stage detail recorded.</string>
+    <string name="sleep_hypnogram_summary">%1$s. %2$s.</string>
+    <string name="sleep_hypnogram_stage">%1$s %2$dh %3$dm</string>
+
+    <!-- Activity -->
+    <string name="activity_title">Activity</string>
+    <string name="activity_effort_title">Effort</string>
+    <string name="activity_effort_scale">/21</string>
+    <string name="activity_training_load_title">Training load</string>
+    <string name="activity_training_load_body">Your load combines heart-rate zones and daily movement.</string>
+    <string name="activity_steps">Steps</string>
+    <string name="activity_zone_minutes">Zone minutes</string>
+    <string name="activity_heart_rate">Heart rate</string>
+    <string name="activity_timeline_title">Activity timeline</string>
+    <string name="activity_timeline_recorded">Steps recorded across the selected day.</string>
+    <string name="activity_timeline_empty">Hourly detail is not available for this day.</string>
+    <string name="activity_timeline_description">Hourly activity, %1$d steps</string>
+    <string name="activity_trends_title">Trends</string>
+    <string name="activity_trends_summary">Average effort %1$.1f across the last %2$d days. Daily load reads best alongside recovery and sleep.</string>
+    <string name="activity_trends_building">Building your activity history.</string>
+    <string name="activity_trend_recovery">Recovery</string>
+    <string name="activity_trend_effort">Effort</string>
+    <string name="activity_trend_hrv">HRV</string>
+    <string name="activity_trend_rhr">Resting HR</string>
+
+    <!-- Journal -->
+    <string name="journal_title">Journal</string>
+    <string name="journal_today_title">What happened today</string>
+    <string name="journal_today_body">Tap everything that applies. Your tags are matched against the recovery score for the same day.</string>
+    <string name="journal_impacts_title">What affects your recovery</string>
+    <string name="journal_impacts_empty">Log your days for a couple of weeks and this is where the patterns show up.</string>
+    <plurals name="journal_impact_costs">
+        <item quantity="one">%1$s costs you %2$d recovery point on average.</item>
+        <item quantity="other">%1$s costs you %2$d recovery points on average.</item>
+    </plurals>
+    <plurals name="journal_impact_adds">
+        <item quantity="one">%1$s adds %2$d recovery point on average.</item>
+        <item quantity="other">%1$s adds %2$d recovery points on average.</item>
+    </plurals>
+    <string name="journal_points_gain">+%1$d pts</string>
+    <string name="journal_points_loss">%1$d pts</string>
+    <string name="journal_needs_more_data">Needs more data</string>
+    <string name="journal_days_with_without">%1$d days with · %2$d without</string>
+    <string name="journal_days_logged">%1$d of %2$d days logged</string>
+    <plurals name="journal_based_on_days">
+        <item quantity="one">Based on %1$d journalled day in the last 90.</item>
+        <item quantity="other">Based on %1$d journalled days in the last 90.</item>
+    </plurals>
+    <string name="journal_tag_alcohol">Alcohol</string>
+    <string name="journal_tag_late_meal">Late meal</string>
+    <string name="journal_tag_late_caffeine">Late caffeine</string>
+    <string name="journal_tag_screens_before_bed">Screens before bed</string>
+    <string name="journal_tag_high_stress">High stress</string>
+    <string name="journal_tag_travel">Travel</string>
+    <string name="journal_tag_feeling_ill">Feeling ill</string>
+    <string name="journal_tag_sore">Sore</string>
+    <string name="journal_tag_meditated">Meditated</string>
+    <string name="journal_tag_well_hydrated">Well hydrated</string>
+    <string name="journal_tag_full_rest_day">Full rest day</string>
+
+    <!-- Vital age -->
+    <string name="vital_age_title">Vital age</string>
+    <string name="vital_age_matches">Matches your age (%1$d)</string>
+    <string name="vital_age_younger">%1$.1f yrs younger than your age (%2$d)</string>
+    <string name="vital_age_older">%1$.1f yrs older than your age (%2$d)</string>
+    <string name="vital_age_as_of">As of %1$s · updates every Monday</string>
+    <string name="vital_age_pace_title">Aging pace</string>
+    <string name="vital_age_pace_needs_data">Needs about a week more data to show how fast you\'re aging.</string>
+    <string name="vital_age_pace_value">%1$+.1f yrs / week</string>
+    <string name="vital_age_pace_better">Your vitals are trending younger than last week.</string>
+    <string name="vital_age_pace_worse">Your vitals are trending older than last week.</string>
+    <string name="vital_age_pace_neutral">Your vital age is holding steady.</string>
+    <string name="vital_age_breakdown_title">What drives it</string>
+    <string name="vital_age_breakdown_note">The visible impacts add up to your Vital Age difference. Left of centre = younger.</string>
+    <string name="vital_age_component_fitness">Cardio fitness (est. VO2max)</string>
+    <string name="vital_age_component_hrv">HRV</string>
+    <string name="vital_age_component_rhr">Resting HR</string>
+    <string name="vital_age_component_sleep">Sleep</string>
+    <string name="vital_age_component_activity">Activity</string>
+    <string name="vital_age_component_metadata">%1$d%% weight · %2$d%% confidence</string>
+    <string name="vital_age_component_impact">%1$+.1f yr impact</string>
+    <string name="vital_age_component_no_data">not enough data</string>
+    <string name="vital_age_history">History</string>
+    <string name="vital_age_history_selected">%1$.1f · %2$s</string>
+    <string name="vital_age_history_today">%1$.1f today</string>
+    <string name="vital_age_calibrating_title">Calibrating</string>
+    <string name="vital_age_calibrating_body">Vital age needs a few days of vitals to be meaningful.</string>
+    <plurals name="vital_age_calibrating_body_days">
+        <item quantity="one">Vital age needs a few days of vitals to be meaningful. About %1$d more day to go.</item>
+        <item quantity="other">Vital age needs a few days of vitals to be meaningful. About %1$d more days to go.</item>
+    </plurals>
+
+    <!-- Metric detail -->
+    <string name="metric_heart_rate_label">Resting Heart Rate</string>
+    <string name="metric_heart_rate_about">Resting heart rate is taken while you are still. Values under your baseline usually mean you are recovering well.</string>
+    <string name="metric_activity_label">Steps</string>
+    <string name="metric_activity_about">Steps are aggregated per calendar day from Health Connect and feed your daily movement load.</string>
+    <string name="metric_hrv_label">HRV</string>
+    <string name="metric_hrv_about">Heart-rate variability reflects autonomic balance. Above your baseline generally means you are well recovered.</string>
+    <string name="metric_detail_last_days">Last %1$d days</string>
+    <string name="metric_detail_empty">Two recorded days are needed before this trend can be drawn.</string>
+    <string name="metric_detail_baseline_average">Baseline average %1$s over your recent days.</string>
+    <string name="metric_detail_meaning_title">What this means</string>
+    <string name="metric_detail_meaning_body">Read this alongside recovery and sleep rather than on its own.</string>
+    <string name="metric_detail_status_better">Trending well</string>
+    <string name="metric_detail_status_worse">Off baseline</string>
+    <string name="metric_detail_status_neutral">Steady</string>
+
+    <!-- Account -->
+    <string name="account_title">Account</string>
+    <string name="account_subtitle">Local profile</string>
+    <string name="account_profile_title">Profile</string>
+    <string name="account_birth_year">Birth year</string>
+    <string name="account_not_set">Not set</string>
+    <string name="account_chronological_age">Chronological age</string>
+    <plurals name="account_age_years">
+        <item quantity="one">%1$d year</item>
+        <item quantity="other">%1$d years</item>
+    </plurals>
+    <string name="account_not_available">Not available</string>
+    <string name="account_add_birth_year">Add birth year</string>
+    <string name="account_edit_birth_year">Edit birth year</string>
+    <string name="account_vital_age_title">Vital Age</string>
+    <string name="account_open_vital_age">Open Vital Age</string>
+    <string name="account_vital_age_headline">Your long-term health trend</string>
+    <string name="account_vital_age_body">See how recent recovery signals compare with your age.</string>
+    <string name="account_health_connect_title">Health Connect</string>
+    <string name="account_health_connect_connected">Connected</string>
+    <string name="account_health_connect_needs_attention">Needs attention</string>
+    <string name="account_health_connect_ready">Ready</string>
+    <string name="account_health_connect_review">Review</string>
+    <string name="account_health_connect_connected_body">Pulsar can read the selected health categories.</string>
+    <string name="account_health_connect_review_body">Review Health Connect access to keep your dashboard current.</string>
+    <string name="account_manage_health_connect">Manage Health Connect</string>
+    <string name="account_notifications_title">Notifications</string>
+    <string name="account_morning_summary">Morning summary</string>
+    <string name="account_morning_summary_body">One notification each morning with your recovery, once the overnight sync finishes.</string>
+    <string name="account_notifications_on">On</string>
+    <string name="account_notifications_off">Off</string>
+    <string name="account_enable_notifications">Open notification settings</string>
+
+    <string name="account_data_used_title">Data used</string>
+    <string name="account_data_used_body">Only categories used by your scores and trends are requested.</string>
+    <string name="account_category_heart_rate">Heart rate</string>
+    <string name="account_category_hrv">Heart rate variability</string>
+    <string name="account_category_resting_heart_rate">Resting heart rate</string>
+    <string name="account_category_sleep">Sleep</string>
+    <string name="account_category_steps">Steps</string>
+    <string name="account_category_active_calories">Active calories</string>
+    <string name="account_category_exercise">Exercise</string>
+    <string name="account_category_respiratory_rate">Respiratory rate</string>
+    <string name="account_category_blood_oxygen">Blood oxygen</string>
+    <string name="account_category_skin_temperature">Skin temperature</string>
+    <string name="account_privacy_title">Privacy</string>
+    <string name="account_privacy_headline">Processed locally</string>
+    <string name="account_privacy_body">Your health data is read from Health Connect and processed on this device. No account or cloud sync is required.</string>
+    <string name="account_your_data_title">Your data</string>
+    <string name="account_export_body">Export every stored day as CSV: scores, sleep, HRV, resting heart rate and steps.</string>
+    <string name="account_export_button">Export CSV</string>
+    <string name="account_export_in_progress">Exporting…</string>
+    <string name="account_export_saved">Export saved.</string>
+    <string name="account_export_failed">Export failed. Pick a different location and try again.</string>
+    <string name="account_version" translatable="false">Pulsar  ·  Version 1.0</string>
+    <string name="account_year_label">Year</string>
+    <string name="account_year_error">Enter a year between 1900 and %1$d.</string>
+    <string name="account_year_help">Used only to calculate age-based context.</string>
+    <string name="account_save">Save</string>
+    <string name="account_cancel">Cancel</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_subtitle">Recovery, sleep and effort from the data your watch already collects.</string>
+    <string name="onboarding_reads_title">What Pulsar reads</string>
+    <string name="onboarding_reads_body">Everything is read through Health Connect and stays on this device.</string>
+    <string name="onboarding_category_heart_rate_hrv">Heart rate and HRV</string>
+    <string name="onboarding_category_resting_heart_rate">Resting heart rate</string>
+    <string name="onboarding_category_sleep">Sleep and sleep stages</string>
+    <string name="onboarding_category_activity">Steps, calories, exercise</string>
+    <string name="onboarding_access">Access</string>
+    <string name="onboarding_access_granted">Granted</string>
+    <string name="onboarding_access_not_granted">Not granted</string>
+    <string name="onboarding_grant_access">Grant Health Connect access</string>
+    <string name="onboarding_about_you_title">About you</string>
+    <string name="onboarding_about_you_body">Your birth year sets your estimated maximum heart rate and anchors Vital Age.</string>
+    <string name="onboarding_birth_year">Birth year</string>
+    <string name="onboarding_birth_year_error">Enter a year between %1$d and %2$d.</string>
+    <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_morning_summary_title">Morning summary</string>
+    <string name="onboarding_morning_summary_body">One notification each morning with your recovery once the overnight sync finishes.</string>
+    <string name="onboarding_notifications_enabled">Enabled</string>
+    <string name="onboarding_allow_notifications">Allow notifications</string>
+    <string name="onboarding_calibration_note">Scores calibrate to you over about one to two weeks. Until then Pulsar shows a calibrating state instead of a number it cannot yet stand behind.</string>
+    <string name="onboarding_health_connect_required">Health Connect required</string>
+    <string name="onboarding_health_connect_update">Health Connect needs an update before Pulsar can read your data.</string>
+    <string name="onboarding_health_connect_missing">Pulsar reads your data through Health Connect, which is not installed yet.</string>
+    <string name="onboarding_open_play_store">Open Play Store</string>
+
+    <!-- Morning notification -->
+    <string name="notification_channel_morning_name">Morning recovery</string>
+    <string name="notification_channel_morning_description">Your recovery score and training guidance each morning.</string>
+    <string name="notification_morning_title">Recovery %1$d%%</string>
+    <string name="notification_guidance_high">high intensity</string>
+    <string name="notification_guidance_moderate">moderate training</string>
+    <string name="notification_guidance_light">light training</string>
+    <string name="notification_guidance_rest">rest and recover</string>
+    <string name="notification_morning_calibrating">Still learning your baseline - %1$s</string>
+    <string name="notification_morning_summary">%1$s - %2$s</string>
+
+    <!-- Home screen widget -->
+    <string name="widget_description">Today\'s recovery, sleep and effort at a glance.</string>
+    <string name="widget_recovery_label">RECOVERY</string>
+    <string name="widget_sleep_label">Sleep</string>
+    <string name="widget_effort_label">Effort</string>
+    <string name="widget_calibrating">Calibrating</string>
+    <string name="widget_effort_of_max">of 21</string>
+    <string name="widget_percent" translatable="false">%</string>
+    <string name="widget_no_value" translatable="false">--</string>
 </resources>

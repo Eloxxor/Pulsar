@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.esusic.recoverytracker.R
 import com.esusic.recoverytracker.data.AggregationService
 import com.esusic.recoverytracker.data.HealthRepository
 import com.esusic.recoverytracker.data.healthconnect.FakeHealthDataSource
@@ -249,7 +250,10 @@ class SleepViewModelTest {
 
         assertEquals(450.0, viewModel.uiState.value.weeklyAverageMinutes!!, 0.001)
         assertEquals(3, viewModel.uiState.value.weeklyNights.size)
-        assertTrue(viewModel.uiState.value.weeklyInsight!!.isNotBlank())
+        assertEquals(
+            R.string.sleep_insight_improved,
+            viewModel.uiState.value.weeklyInsight
+        )
         assertEquals(
             LocalDate.of(2026, 7, 11),
             viewModel.uiState.value.weeklyNights.first().date

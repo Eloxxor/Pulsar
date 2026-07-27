@@ -23,12 +23,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.annotation.StringRes
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.esusic.recoverytracker.R
 import com.esusic.recoverytracker.model.DeltaKind
 import com.esusic.recoverytracker.scoring.VitalAgeComponent
 import com.esusic.recoverytracker.scoring.VitalAgeResult
@@ -38,8 +42,11 @@ import com.esusic.recoverytracker.ui.common.DetailTopBar
 import com.esusic.recoverytracker.ui.common.Eyebrow
 import com.esusic.recoverytracker.ui.common.MetricLineChart
 import com.esusic.recoverytracker.ui.common.SectionCard
+import com.esusic.recoverytracker.ui.common.SkeletonBox
+import com.esusic.recoverytracker.ui.common.SkeletonLine
+import com.esusic.recoverytracker.ui.common.animatedValue
+import com.esusic.recoverytracker.ui.common.rememberDateFormatter
 import com.esusic.recoverytracker.ui.theme.AppColors
-import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -54,11 +61,11 @@ fun VitalAgeScreen(viewModel: VitalAgeViewModel, onBack: () -> Unit) {
             .padding(horizontal = 20.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        DetailTopBar("Vital age", onBack)
+        DetailTopBar(stringResource(R.string.vital_age_title), onBack)
 
         val result = uiState.result
         when {
-            uiState.isLoading -> Unit
+            uiState.isLoading -> VitalAgeSkeleton()
             result == null -> CalibratingCard(uiState.daysUntilReady)
             else -> {
                 HeroSection(result, uiState)
@@ -71,17 +78,37 @@ fun VitalAgeScreen(viewModel: VitalAgeViewModel, onBack: () -> Unit) {
 }
 
 @Composable
+private fun VitalAgeSkeleton() {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SkeletonBox(
+            modifier = Modifier.fillMaxWidth(0.55f).height(64.dp),
+            shape = RoundedCornerShape(18.dp)
+        )
+        SkeletonLine(widthFraction = 0.75f, height = 16.dp)
+        SkeletonLine(widthFraction = 0.4f, height = 12.dp)
+    }
+    SkeletonBox(
+        modifier = Modifier.fillMaxWidth().height(140.dp),
+        shape = RoundedCornerShape(24.dp)
+    )
+    SkeletonBox(
+        modifier = Modifier.fillMaxWidth().height(260.dp),
+        shape = RoundedCornerShape(24.dp)
+    )
+}
+
+@Composable
 private fun HeroSection(result: VitalAgeResult, uiState: VitalAgeUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                "%.1f".format(result.vitalAge),
+                "%.1f".format(animatedValue(result.vitalAge.toFloat())),
                 fontSize = 64.sp,
                 fontWeight = FontWeight.Bold,
                 color = AppColors.VitalAge
             )
             Text(
-                "yrs",
+                stringResource(R.string.unit_years_short),
                 style = MaterialTheme.typography.titleMedium,
                 color = AppColors.TextMuted,
                 modifier = Modifier.padding(bottom = 12.dp)
@@ -89,15 +116,27 @@ private fun HeroSection(result: VitalAgeResult, uiState: VitalAgeUiState) {
         }
         val diff = result.vitalAge - result.chronologicalAge
         val (text, color) = when {
-            abs(diff) < 0.5 -> "Matches your age (${result.chronologicalAge})" to AppColors.TextSecondary
-            diff < 0 -> "%.1f yrs younger than your age (%d)".format(-diff, result.chronologicalAge) to AppColors.Recovery
-            else -> "%.1f yrs older than your age (%d)".format(diff, result.chronologicalAge) to AppColors.Danger
+            abs(diff) < 0.5 ->
+                stringResource(R.string.vital_age_matches, result.chronologicalAge) to
+                    AppColors.TextSecondary
+            diff < 0 ->
+                stringResource(R.string.vital_age_younger, -diff, result.chronologicalAge) to
+                    AppColors.Recovery
+            else ->
+                stringResource(R.string.vital_age_older, diff, result.chronologicalAge) to
+                    AppColors.Danger
         }
         Text(text, style = MaterialTheme.typography.titleSmall, color = color, fontWeight = FontWeight.SemiBold)
-        DeltaChip(delta = uiState.weeklyDelta, unit = "yr", decimals = 1, suffix = "vs last week")
+        DeltaChip(
+            delta = uiState.weeklyDelta,
+            unit = stringResource(R.string.unit_year_short),
+            decimals = 1,
+            suffix = R.string.trend_delta_suffix_last_week
+        )
+        val asOfFormatter = rememberDateFormatter(R.string.date_pattern_day_month_short)
         uiState.asOfDate?.let {
             Text(
-                "As of ${it.format(DateTimeFormatter.ofPattern("d MMM"))} · updates every Monday",
+                stringResource(R.string.vital_age_as_of, it.format(asOfFormatter)),
                 style = MaterialTheme.typography.bodySmall,
                 color = AppColors.TextMuted
             )
@@ -107,11 +146,11 @@ private fun HeroSection(result: VitalAgeResult, uiState: VitalAgeUiState) {
 
 @Composable
 private fun AgingPaceCard(uiState: VitalAgeUiState) {
-    SectionCard(title = "Aging pace") {
+    SectionCard(title = stringResource(R.string.vital_age_pace_title)) {
         val delta = uiState.weeklyDelta
         if (delta == null) {
             Text(
-                "Needs about a week more data to show how fast you're aging.",
+                stringResource(R.string.vital_age_pace_needs_data),
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppColors.TextSecondary
             )
@@ -122,17 +161,19 @@ private fun AgingPaceCard(uiState: VitalAgeUiState) {
                 DeltaKind.NEUTRAL -> AppColors.TextSecondary
             }
             Text(
-                "%+.1f yrs / week".format(delta.diff),
+                stringResource(R.string.vital_age_pace_value, delta.diff),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = color
             )
             Text(
-                when (delta.kind) {
-                    DeltaKind.BETTER -> "Your vitals are trending younger than last week."
-                    DeltaKind.WORSE -> "Your vitals are trending older than last week."
-                    DeltaKind.NEUTRAL -> "Your vital age is holding steady."
-                },
+                stringResource(
+                    when (delta.kind) {
+                        DeltaKind.BETTER -> R.string.vital_age_pace_better
+                        DeltaKind.WORSE -> R.string.vital_age_pace_worse
+                        DeltaKind.NEUTRAL -> R.string.vital_age_pace_neutral
+                    }
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = AppColors.TextSecondary
             )
@@ -142,15 +183,15 @@ private fun AgingPaceCard(uiState: VitalAgeUiState) {
 
 @Composable
 private fun BreakdownCard(result: VitalAgeResult) {
-    SectionCard(title = "What drives it") {
+    SectionCard(title = stringResource(R.string.vital_age_breakdown_title)) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            ComponentRow("Cardio fitness (est. VO2max)", result.fitness)
-            ComponentRow("HRV", result.hrv)
-            ComponentRow("Resting HR", result.rhr)
-            ComponentRow("Sleep", result.sleep)
-            ComponentRow("Activity", result.activity)
+            ComponentRow(R.string.vital_age_component_fitness, result.fitness)
+            ComponentRow(R.string.vital_age_component_hrv, result.hrv)
+            ComponentRow(R.string.vital_age_component_rhr, result.rhr)
+            ComponentRow(R.string.vital_age_component_sleep, result.sleep)
+            ComponentRow(R.string.vital_age_component_activity, result.activity)
             Text(
-                "The visible impacts add up to your Vital Age difference. Left of centre = younger.",
+                stringResource(R.string.vital_age_breakdown_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = AppColors.TextMuted
             )
@@ -159,7 +200,7 @@ private fun BreakdownCard(result: VitalAgeResult) {
 }
 
 @Composable
-private fun ComponentRow(label: String, component: VitalAgeComponent?) {
+private fun ComponentRow(@StringRes label: Int, component: VitalAgeComponent?) {
     val presentation = vitalAgeComponentPresentation(label, component)
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
@@ -168,13 +209,15 @@ private fun ComponentRow(label: String, component: VitalAgeComponent?) {
             verticalAlignment = Alignment.Top
         ) {
             Text(
-                presentation.label,
+                stringResource(presentation.label),
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodySmall,
                 color = AppColors.TextSecondary
             )
             Text(
-                presentation.impact,
+                presentation.impactYears
+                    ?.let { stringResource(R.string.vital_age_component_impact, it) }
+                    ?: stringResource(R.string.vital_age_component_no_data),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold,
                 color = when {
@@ -185,9 +228,13 @@ private fun ComponentRow(label: String, component: VitalAgeComponent?) {
                 }
             )
         }
-        presentation.metadata?.let {
+        if (presentation.weightPercent != null && presentation.confidencePercent != null) {
             Text(
-                it,
+                stringResource(
+                    R.string.vital_age_component_metadata,
+                    presentation.weightPercent,
+                    presentation.confidencePercent
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = AppColors.TextMuted
             )
@@ -197,21 +244,20 @@ private fun ComponentRow(label: String, component: VitalAgeComponent?) {
 }
 
 internal data class VitalAgeComponentPresentation(
-    val label: String,
-    val metadata: String?,
-    val impact: String
+    @get:StringRes val label: Int,
+    val weightPercent: Int?,
+    val confidencePercent: Int?,
+    val impactYears: Double?
 )
 
 internal fun vitalAgeComponentPresentation(
-    label: String,
+    @StringRes label: Int,
     component: VitalAgeComponent?
 ): VitalAgeComponentPresentation = VitalAgeComponentPresentation(
     label = label,
-    metadata = component?.let {
-        "${(it.weight * 100).roundToInt()}% weight · " +
-            "${(it.confidence * 100).roundToInt()}% confidence"
-    },
-    impact = component?.let { "%+.1f yr impact".format(it.impactYears) } ?: "not enough data"
+    weightPercent = component?.let { (it.weight * 100).roundToInt() },
+    confidencePercent = component?.let { (it.confidence * 100).roundToInt() },
+    impactYears = component?.impactYears
 )
 
 @Composable
@@ -252,14 +298,19 @@ private fun DivergingBar(offsetYears: Double?) {
 private fun HistoryCard(history: List<ChartPoint>) {
     SectionCard {
         var selected by remember { mutableStateOf<ChartPoint?>(null) }
+        val historyFormatter = rememberDateFormatter(R.string.date_pattern_day_month_short)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Eyebrow("History")
+            Eyebrow(stringResource(R.string.vital_age_history))
             val shown = selected
             Text(
                 if (shown != null) {
-                    "%.1f · %s".format(shown.value, shown.date.format(DateTimeFormatter.ofPattern("d MMM")))
+                    stringResource(
+                        R.string.vital_age_history_selected,
+                        shown.value,
+                        shown.date.format(historyFormatter)
+                    )
                 } else {
-                    "%.1f today".format(history.last().value)
+                    stringResource(R.string.vital_age_history_today, history.last().value)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.SemiBold
@@ -269,6 +320,7 @@ private fun HistoryCard(history: List<ChartPoint>) {
             points = history,
             lineColor = AppColors.VitalAge,
             valueFormatter = { "%.1f".format(it) },
+            metricName = stringResource(R.string.vital_age_title),
             onSelect = { selected = it }
         )
     }
@@ -276,10 +328,11 @@ private fun HistoryCard(history: List<ChartPoint>) {
 
 @Composable
 private fun CalibratingCard(daysUntilReady: Int?) {
-    SectionCard(title = "Calibrating") {
+    SectionCard(title = stringResource(R.string.vital_age_calibrating_title)) {
         Text(
-            "Vital age needs a few days of vitals to be meaningful." +
-                (daysUntilReady?.let { " About $it more day${if (it == 1) "" else "s"} to go." } ?: ""),
+            daysUntilReady?.let {
+                pluralStringResource(R.plurals.vital_age_calibrating_body_days, it, it)
+            } ?: stringResource(R.string.vital_age_calibrating_body),
             style = MaterialTheme.typography.bodyMedium,
             color = AppColors.TextSecondary
         )

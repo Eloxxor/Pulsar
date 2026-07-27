@@ -1,7 +1,9 @@
 package com.esusic.recoverytracker.ui.sleep
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.esusic.recoverytracker.R
 import com.esusic.recoverytracker.data.HealthRepository
 import com.esusic.recoverytracker.data.local.DailyAggregateEntity
 import com.esusic.recoverytracker.model.MetricDelta
@@ -46,7 +48,8 @@ data class SleepUiState(
     val sleepPerformance: Int? = null,
     val weeklyNights: List<SleepNightPoint> = emptyList(),
     val weeklyAverageMinutes: Double? = null,
-    val weeklyInsight: String? = null
+    @get:StringRes val weeklyInsight: Int? = null,
+    val isRefreshing: Boolean = false
 )
 
 class SleepViewModel(
@@ -73,6 +76,20 @@ class SleepViewModel(
 
     fun goToNextDay() = selectedDayStore.next()
 
+    fun refresh() {
+        if (_uiState.value.isRefreshing) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isRefreshing = true)
+            try {
+                repository.syncDate(_uiState.value.selectedDate)
+            } catch (e: Exception) {
+                // The Room flow keeps serving stored history, so a failed refresh is not fatal.
+            } finally {
+                _uiState.value = _uiState.value.copy(isRefreshing = false)
+            }
+        }
+    }
+
     private suspend fun publishDate(
         date: LocalDate,
         aggregates: List<DailyAggregateEntity>
@@ -94,6 +111,7 @@ class SleepViewModel(
             ?.map { it.toDouble() }
             ?.average()
         val base = SleepUiState(
+            isRefreshing = _uiState.value.isRefreshing,
             selectedDate = date,
             canGoBack = aggregates.any { it.date < dateString },
             canGoForward = date < selectedDayStore.today(),
@@ -163,15 +181,15 @@ class SleepViewModel(
         )
     }
 
-    private fun weeklyInsight(nights: List<SleepNightPoint>): String? {
+    @StringRes
+    private fun weeklyInsight(nights: List<SleepNightPoint>): Int? {
         if (nights.size < 2) return null
         val previousAverage = nights.dropLast(1).map { it.durationMinutes }.average()
         val latest = nights.last().durationMinutes
         return when {
-            latest >= previousAverage + 30.0 -> "Your sleep duration improved this week."
-            latest <= previousAverage - 30.0 ->
-                "Your latest night was shorter than your recent average."
-            else -> "Your sleep duration is holding steady."
+            latest >= previousAverage + 30.0 -> R.string.sleep_insight_improved
+            latest <= previousAverage - 30.0 -> R.string.sleep_insight_shorter
+            else -> R.string.sleep_insight_steady
         }
     }
 }

@@ -1,0 +1,386 @@
+<resources>
+
+    <!-- Shared units and formats -->
+    <string name="unit_ms">ms</string>
+    <string name="unit_bpm">bpm</string>
+    <string name="unit_min">Min</string>
+    <string name="unit_percentage_points">PP</string>
+    <string name="unit_celsius">°C</string>
+    <string name="unit_year_short">J.</string>
+    <string name="unit_years_short">J.</string>
+    <string name="duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="date_pattern_weekday_month_day">EEEE, d. MMM</string>
+    <string name="date_pattern_month_day">d. MMM</string>
+    <string name="date_pattern_day_month_short">d. MMM</string>
+    <string name="date_pattern_month_day_time">d. MMM, HH:mm</string>
+
+    <!-- Common controls -->
+    <string name="common_back">Zurück</string>
+    <string name="common_previous_day">Vorheriger Tag</string>
+    <string name="common_next_day">Nächster Tag</string>
+    <string name="common_gauge_calibrating">Wert wird noch kalibriert</string>
+
+    <!-- Trends and charts -->
+    <string name="trend_range_days">%1$d Tage</string>
+    <string name="trend_empty">Für diesen Verlauf werden mindestens zwei aufgezeichnete Tage benötigt.</string>
+    <string name="trend_delta_suffix_month">vs. 30 T</string>
+    <string name="trend_delta_suffix_average">vs. Ø</string>
+    <string name="trend_delta_suffix_baseline">vs. Ausgangswert</string>
+    <string name="trend_delta_suffix_last_week">vs. Vorwoche</string>
+    <string name="trend_chart_baseline_marker">Ø %1$s</string>
+    <string name="trend_chart_empty_description">Verlaufsdiagramm %1$s. Noch nicht genug Daten.</string>
+    <string name="trend_chart_description">Verlauf %1$s, %2$d Tage von %3$s bis %4$s. Zuletzt %5$s, Tiefstwert %6$s, Höchstwert %7$s.</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Start</string>
+    <string name="nav_sleep">Schlaf</string>
+    <string name="nav_activity">Aktivität</string>
+    <string name="nav_journal">Tagebuch</string>
+    <string name="nav_account">Konto</string>
+
+    <!-- Recovery status copy -->
+    <string name="status_recovery_calibrating_label">Ausgangswert wird gelernt</string>
+    <string name="status_recovery_calibrating_message">Ein paar Tage mehr verbessern diesen Wert.</string>
+    <string name="status_recovery_none_label">Noch kein Wert</string>
+    <string name="status_recovery_none_message">Synchronisiere Health Connect, um die Erholung zu berechnen.</string>
+    <string name="status_recovery_optimal_label">Optimal</string>
+    <string name="status_recovery_optimal_message">Du bist gut erholt.</string>
+    <string name="status_recovery_ready_label">Bereit</string>
+    <string name="status_recovery_ready_message">Gute Kapazität für einen normalen Tag.</string>
+    <string name="status_recovery_balanced_label">Ausgeglichen</string>
+    <string name="status_recovery_balanced_message">Halte die Intensität im Griff.</string>
+    <string name="status_recovery_low_label">Erholen</string>
+    <string name="status_recovery_low_message">Setze auf Ruhe und lockere Bewegung.</string>
+
+    <!-- Effort status copy -->
+    <string name="status_effort_none_label">Noch keine Belastung</string>
+    <string name="status_effort_none_message">Aktivität erscheint nach der nächsten Synchronisierung.</string>
+    <string name="status_effort_high_label">Hoch</string>
+    <string name="status_effort_high_message">Ein fordernder Tag. Lass Raum für Erholung.</string>
+    <string name="status_effort_productive_label">Produktiv</string>
+    <string name="status_effort_productive_message">Spürbare Belastung, ohne ins obere Ende zu gehen.</string>
+    <string name="status_effort_light_label">Leicht</string>
+    <string name="status_effort_light_message">Leichte Aktivität summiert sich.</string>
+    <string name="status_effort_resting_label">Ruhe</string>
+    <string name="status_effort_resting_message">Deine aktuelle Belastung ist gering.</string>
+
+    <!-- Sleep status copy -->
+    <string name="status_sleep_none_label">Noch kein Wert</string>
+    <string name="status_sleep_none_message">Schlafdetails erscheinen nach einer aufgezeichneten Nacht.</string>
+    <string name="status_sleep_excellent_label">Ausgezeichnet</string>
+    <string name="status_sleep_excellent_message">Starke Dauer und gute Schlafqualität.</string>
+    <string name="status_sleep_good_label">Gut</string>
+    <string name="status_sleep_good_message">Eine solide Nacht mit etwas Luft nach oben.</string>
+    <string name="status_sleep_fair_label">Mäßig</string>
+    <string name="status_sleep_fair_message">Schütze deine Erholung und schlafe heute Nacht länger.</string>
+    <string name="status_sleep_low_label">Niedrig</string>
+    <string name="status_sleep_low_message">Ein ruhigerer Tag hilft dir beim Erholen.</string>
+
+    <!-- Daily recommendation -->
+    <string name="recommendation_calibrating">Trage deinen Tracker weiter, damit ein verlässlicher Ausgangswert entsteht.</string>
+    <string name="recommendation_no_data">Synchronisiere deine aktuellen Gesundheitsdaten für eine Tagesempfehlung.</string>
+    <string name="recommendation_rest">Setze heute auf Ruhe und lockere Bewegung.</string>
+    <string name="recommendation_load_already_high">Deine Belastung ist bereits hoch. Nimm den Rest des Tages locker.</string>
+    <string name="recommendation_challenge">Du hast heute Kapazität für eine fordernde Einheit.</string>
+    <string name="recommendation_normal_day">Ein normaler Trainingstag passt zu deiner aktuellen Erholung.</string>
+    <string name="recommendation_controlled">Wähle eine kontrollierte Intensität und prüfe danach, wie du dich fühlst.</string>
+
+    <!-- Home -->
+    <string name="home_today">Heute</string>
+    <string name="home_permission_off_title">Health-Connect-Zugriff ist aus</string>
+    <string name="home_permission_off_body">Die gespeicherte Historie bleibt verfügbar. Verbinde dich unter Konto neu, um sie zu aktualisieren.</string>
+    <string name="home_recovery_card_description">Erholungskarte</string>
+    <string name="home_recovery_title">Erholung</string>
+    <string name="home_effort_card_description">Belastungskarte</string>
+    <string name="home_effort_title">Belastung</string>
+    <string name="home_effort_scale">/ 21</string>
+    <string name="home_sleep_card_description">Schlafkarte</string>
+    <string name="home_sleep_title">Schlaf</string>
+    <string name="home_sleep_performance">%1$d%%</string>
+    <string name="home_core_metrics">Kernwerte</string>
+    <string name="home_metric_hrv">HRV</string>
+    <string name="home_metric_resting_hr">Ruhepuls</string>
+    <string name="home_baseline_building">Ausgangswert entsteht</string>
+    <string name="home_baseline_at">Auf Ausgangswert</string>
+    <string name="home_baseline_favorable">Besser als Ausgangswert</string>
+    <string name="home_baseline_outside">Außerhalb deines Ausgangswerts</string>
+    <string name="home_vital_age_title">Vitalalter</string>
+    <string name="home_vital_age_card_description">Vitalalter-Karte</string>
+    <string name="home_vital_age_learning">Lernt</string>
+    <string name="home_vital_age_years">Jahre</string>
+    <string name="home_vital_age_needs_data">Ein paar Tage durchgehende Daten werden benötigt.</string>
+    <string name="home_vital_age_recent_signals">Basierend auf deinen jüngsten Erholungssignalen.</string>
+    <string name="home_vital_age_below">%1$.1f Jahre unter deinem kalendarischen Alter.</string>
+    <string name="home_vital_age_above">%1$.1f Jahre über deinem kalendarischen Alter.</string>
+    <string name="home_vital_age_close">Nah an deinem kalendarischen Alter.</string>
+    <string name="home_more_vitals">Weitere Vitalwerte</string>
+    <string name="home_vital_respiratory_rate">Atemfrequenz</string>
+    <string name="home_vital_respiratory_rate_value">%1$.1f /min</string>
+    <string name="home_vital_spo2">SpO₂</string>
+    <string name="home_vital_spo2_value">%1$.0f%%</string>
+    <string name="home_vital_skin_temperature">Hauttemperatur</string>
+    <string name="home_vital_skin_temperature_value">%1$+.1f°C</string>
+    <string name="home_vital_steps">Schritte</string>
+    <string name="home_vital_zone_minutes">Zonenminuten</string>
+    <string name="home_vital_zone_minutes_value">%1$d Min</string>
+    <string name="home_disclaimer">Trainingskontext, keine medizinische Beratung.</string>
+    <string name="home_last_updated">Aktualisiert %1$s</string>
+
+    <!-- Recovery detail -->
+    <string name="recovery_detail_title">Erholung</string>
+    <string name="recovery_detail_why">Warum dieser Wert?</string>
+    <string name="recovery_component_hrv">HRV</string>
+    <string name="recovery_component_hrv_explanation">Wie deine Herzratenvariabilität im Vergleich zu deinem persönlichen Ausgangswert liegt.</string>
+    <string name="recovery_component_rhr">Ruhepuls</string>
+    <string name="recovery_component_rhr_explanation">Ein niedrigerer Ruhepuls als üblich spricht in der Regel für gute Erholung.</string>
+    <string name="recovery_component_sleep">Schlaf</string>
+    <string name="recovery_component_sleep_explanation">Dauer und erholsame Phasen im Vergleich zu deinen letzten Nächten.</string>
+    <string name="recovery_component_score">%1$.0f / 100</string>
+    <string name="recovery_recommendation_title">Empfehlung für heute</string>
+    <string name="recovery_disclaimer">Erholung ist ein Trainingssignal, keine medizinische Diagnose.</string>
+
+    <!-- Sleep -->
+    <string name="sleep_title">Schlaf</string>
+    <string name="sleep_night_of">Nacht vom %1$s</string>
+    <string name="sleep_none_title">Kein Schlaf aufgezeichnet</string>
+    <string name="sleep_none_body">Für %1$s liegt kein Schlaf vor.</string>
+    <string name="sleep_timeline_title">Schlafverlauf</string>
+    <string name="sleep_restorative">%1$d%% erholsam</string>
+    <string name="sleep_stages_title">Schlafphasen</string>
+    <string name="sleep_stages_missing">Deine Quelle hat nur die Dauer ohne detaillierte Schlafphasen aufgezeichnet.</string>
+    <string name="sleep_stage_share">%1$d%%</string>
+    <string name="sleep_stage_deep">Tief</string>
+    <string name="sleep_stage_rem">REM</string>
+    <string name="sleep_stage_light">Leicht</string>
+    <string name="sleep_stage_awake">Wach</string>
+    <string name="sleep_stage_unknown">Unbekannt</string>
+    <string name="sleep_versus_need_title">Stunden gegenüber Bedarf</string>
+    <string name="sleep_asleep">Geschlafen</string>
+    <string name="sleep_need">Bedarf</string>
+    <string name="sleep_performance_share">%1$d%% Schlafqualität</string>
+    <string name="sleep_wake_events">Wachphasen</string>
+    <string name="sleep_heart_rate_title">Herzfrequenz im Schlaf</string>
+    <string name="sleep_heart_rate_bpm">%1$d bpm</string>
+    <string name="sleep_heart_rate_low">tief</string>
+    <string name="sleep_heart_rate_avg">Ø</string>
+    <string name="sleep_week_title">Diese Woche</string>
+    <string name="sleep_week_average">Durchschnitt %1$s</string>
+    <string name="sleep_week_bar_description">%1$s, %2$d Stunden %3$d Minuten</string>
+    <string name="sleep_insight_improved">Deine Schlafdauer hat sich diese Woche verbessert.</string>
+    <string name="sleep_insight_shorter">Deine letzte Nacht war kürzer als dein jüngster Durchschnitt.</string>
+    <string name="sleep_insight_steady">Deine Schlafdauer bleibt stabil.</string>
+    <string name="sleep_hypnogram_window">Schlafphasen von %1$s bis %2$s</string>
+    <string name="sleep_hypnogram_no_detail">%1$s. Keine Phasendetails aufgezeichnet.</string>
+    <string name="sleep_hypnogram_summary">%1$s. %2$s.</string>
+    <string name="sleep_hypnogram_stage">%1$s %2$dh %3$dm</string>
+
+    <!-- Activity -->
+    <string name="activity_title">Aktivität</string>
+    <string name="activity_effort_title">Belastung</string>
+    <string name="activity_effort_scale">/21</string>
+    <string name="activity_training_load_title">Trainingsbelastung</string>
+    <string name="activity_training_load_body">Deine Belastung kombiniert Herzfrequenzzonen und tägliche Bewegung.</string>
+    <string name="activity_steps">Schritte</string>
+    <string name="activity_zone_minutes">Zonenminuten</string>
+    <string name="activity_heart_rate">Herzfrequenz</string>
+    <string name="activity_timeline_title">Aktivitätsverlauf</string>
+    <string name="activity_timeline_recorded">Schritte über den ausgewählten Tag verteilt.</string>
+    <string name="activity_timeline_empty">Für diesen Tag gibt es keine stündlichen Details.</string>
+    <string name="activity_timeline_description">Stündliche Aktivität, %1$d Schritte</string>
+    <string name="activity_trends_title">Verläufe</string>
+    <string name="activity_trends_summary">Durchschnittliche Belastung %1$.1f in den letzten %2$d Tagen. Die Tagesbelastung liest sich am besten zusammen mit Erholung und Schlaf.</string>
+    <string name="activity_trends_building">Deine Aktivitätshistorie entsteht.</string>
+    <string name="activity_trend_recovery">Erholung</string>
+    <string name="activity_trend_effort">Belastung</string>
+    <string name="activity_trend_hrv">HRV</string>
+    <string name="activity_trend_rhr">Ruhepuls</string>
+
+    <!-- Journal -->
+    <string name="journal_title">Tagebuch</string>
+    <string name="journal_today_title">Was war heute los</string>
+    <string name="journal_today_body">Tippe alles an, was zutrifft. Deine Einträge werden mit dem Erholungswert desselben Tages abgeglichen.</string>
+    <string name="journal_impacts_title">Was deine Erholung beeinflusst</string>
+    <string name="journal_impacts_empty">Führe ein paar Wochen lang Tagebuch – hier tauchen dann die Muster auf.</string>
+    <plurals name="journal_impact_costs">
+        <item quantity="one">%1$s kostet dich im Schnitt %2$d Erholungspunkt.</item>
+        <item quantity="other">%1$s kostet dich im Schnitt %2$d Erholungspunkte.</item>
+    </plurals>
+    <plurals name="journal_impact_adds">
+        <item quantity="one">%1$s bringt dir im Schnitt %2$d Erholungspunkt.</item>
+        <item quantity="other">%1$s bringt dir im Schnitt %2$d Erholungspunkte.</item>
+    </plurals>
+    <string name="journal_points_gain">+%1$d Pkt.</string>
+    <string name="journal_points_loss">%1$d Pkt.</string>
+    <string name="journal_needs_more_data">Mehr Daten nötig</string>
+    <string name="journal_days_with_without">%1$d Tage mit · %2$d ohne</string>
+    <string name="journal_days_logged">%1$d von %2$d Tagen erfasst</string>
+    <plurals name="journal_based_on_days">
+        <item quantity="one">Basierend auf %1$d erfassten Tag in den letzten 90.</item>
+        <item quantity="other">Basierend auf %1$d erfassten Tagen in den letzten 90.</item>
+    </plurals>
+    <string name="journal_tag_alcohol">Alkohol</string>
+    <string name="journal_tag_late_meal">Spätes Essen</string>
+    <string name="journal_tag_late_caffeine">Spätes Koffein</string>
+    <string name="journal_tag_screens_before_bed">Bildschirm vor dem Schlafen</string>
+    <string name="journal_tag_high_stress">Viel Stress</string>
+    <string name="journal_tag_travel">Reise</string>
+    <string name="journal_tag_feeling_ill">Krank gefühlt</string>
+    <string name="journal_tag_sore">Muskelkater</string>
+    <string name="journal_tag_meditated">Meditiert</string>
+    <string name="journal_tag_well_hydrated">Gut hydriert</string>
+    <string name="journal_tag_full_rest_day">Kompletter Ruhetag</string>
+
+    <!-- Vital age -->
+    <string name="vital_age_title">Vitalalter</string>
+    <string name="vital_age_matches">Entspricht deinem Alter (%1$d)</string>
+    <string name="vital_age_younger">%1$.1f J. jünger als dein Alter (%2$d)</string>
+    <string name="vital_age_older">%1$.1f J. älter als dein Alter (%2$d)</string>
+    <string name="vital_age_as_of">Stand %1$s · aktualisiert jeden Montag</string>
+    <string name="vital_age_pace_title">Alterungstempo</string>
+    <string name="vital_age_pace_needs_data">Es fehlt noch etwa eine Woche an Daten, um dein Alterungstempo zu zeigen.</string>
+    <string name="vital_age_pace_value">%1$+.1f J. / Woche</string>
+    <string name="vital_age_pace_better">Deine Vitalwerte entwickeln sich jünger als letzte Woche.</string>
+    <string name="vital_age_pace_worse">Deine Vitalwerte entwickeln sich älter als letzte Woche.</string>
+    <string name="vital_age_pace_neutral">Dein Vitalalter bleibt stabil.</string>
+    <string name="vital_age_breakdown_title">Was es beeinflusst</string>
+    <string name="vital_age_breakdown_note">Die sichtbaren Einflüsse ergeben zusammen deine Vitalalter-Differenz. Links der Mitte = jünger.</string>
+    <string name="vital_age_component_fitness">Ausdauer (geschätzte VO2max)</string>
+    <string name="vital_age_component_hrv">HRV</string>
+    <string name="vital_age_component_rhr">Ruhepuls</string>
+    <string name="vital_age_component_sleep">Schlaf</string>
+    <string name="vital_age_component_activity">Aktivität</string>
+    <string name="vital_age_component_metadata">%1$d%% Gewicht · %2$d%% Konfidenz</string>
+    <string name="vital_age_component_impact">%1$+.1f J. Einfluss</string>
+    <string name="vital_age_component_no_data">zu wenig Daten</string>
+    <string name="vital_age_history">Verlauf</string>
+    <string name="vital_age_history_selected">%1$.1f · %2$s</string>
+    <string name="vital_age_history_today">%1$.1f heute</string>
+    <string name="vital_age_calibrating_title">Kalibrierung</string>
+    <string name="vital_age_calibrating_body">Das Vitalalter braucht ein paar Tage Vitaldaten, um aussagekräftig zu sein.</string>
+    <plurals name="vital_age_calibrating_body_days">
+        <item quantity="one">Das Vitalalter braucht ein paar Tage Vitaldaten, um aussagekräftig zu sein. Noch etwa %1$d Tag.</item>
+        <item quantity="other">Das Vitalalter braucht ein paar Tage Vitaldaten, um aussagekräftig zu sein. Noch etwa %1$d Tage.</item>
+    </plurals>
+
+    <!-- Metric detail -->
+    <string name="metric_heart_rate_label">Ruhepuls</string>
+    <string name="metric_heart_rate_about">Der Ruhepuls wird gemessen, während du still bist. Werte unter deinem Ausgangswert bedeuten meist, dass du dich gut erholst.</string>
+    <string name="metric_activity_label">Schritte</string>
+    <string name="metric_activity_about">Schritte werden pro Kalendertag aus Health Connect zusammengefasst und fließen in deine tägliche Bewegungsbelastung ein.</string>
+    <string name="metric_hrv_label">HRV</string>
+    <string name="metric_hrv_about">Die Herzratenvariabilität spiegelt das vegetative Gleichgewicht wider. Über deinem Ausgangswert bedeutet in der Regel gute Erholung.</string>
+    <string name="metric_detail_last_days">Letzte %1$d Tage</string>
+    <string name="metric_detail_empty">Für diesen Verlauf werden zwei aufgezeichnete Tage benötigt.</string>
+    <string name="metric_detail_baseline_average">Ausgangswert im Schnitt %1$s über deine letzten Tage.</string>
+    <string name="metric_detail_meaning_title">Was das bedeutet</string>
+    <string name="metric_detail_meaning_body">Lies das zusammen mit Erholung und Schlaf, nicht für sich allein.</string>
+    <string name="metric_detail_status_better">Guter Trend</string>
+    <string name="metric_detail_status_worse">Neben Ausgangswert</string>
+    <string name="metric_detail_status_neutral">Stabil</string>
+
+    <!-- Account -->
+    <string name="account_title">Konto</string>
+    <string name="account_subtitle">Lokales Profil</string>
+    <string name="account_profile_title">Profil</string>
+    <string name="account_birth_year">Geburtsjahr</string>
+    <string name="account_not_set">Nicht gesetzt</string>
+    <string name="account_chronological_age">Kalendarisches Alter</string>
+    <plurals name="account_age_years">
+        <item quantity="one">%1$d Jahr</item>
+        <item quantity="other">%1$d Jahre</item>
+    </plurals>
+    <string name="account_not_available">Nicht verfügbar</string>
+    <string name="account_add_birth_year">Geburtsjahr hinzufügen</string>
+    <string name="account_edit_birth_year">Geburtsjahr ändern</string>
+    <string name="account_vital_age_title">Vitalalter</string>
+    <string name="account_open_vital_age">Vitalalter öffnen</string>
+    <string name="account_vital_age_headline">Dein langfristiger Gesundheitstrend</string>
+    <string name="account_vital_age_body">Sieh, wie deine jüngsten Erholungssignale zu deinem Alter passen.</string>
+    <string name="account_health_connect_title">Health Connect</string>
+    <string name="account_health_connect_connected">Verbunden</string>
+    <string name="account_health_connect_needs_attention">Aufmerksamkeit nötig</string>
+    <string name="account_health_connect_ready">Bereit</string>
+    <string name="account_health_connect_review">Prüfen</string>
+    <string name="account_health_connect_connected_body">Pulsar kann die ausgewählten Gesundheitskategorien lesen.</string>
+    <string name="account_health_connect_review_body">Prüfe den Health-Connect-Zugriff, damit dein Dashboard aktuell bleibt.</string>
+    <string name="account_manage_health_connect">Health Connect verwalten</string>
+    <string name="account_notifications_title">Benachrichtigungen</string>
+    <string name="account_morning_summary">Morgen-Zusammenfassung</string>
+    <string name="account_morning_summary_body">Jeden Morgen eine Benachrichtigung mit deiner Erholung, sobald die nächtliche Synchronisierung fertig ist.</string>
+    <string name="account_notifications_on">An</string>
+    <string name="account_notifications_off">Aus</string>
+    <string name="account_enable_notifications">Benachrichtigungen einstellen</string>
+
+    <string name="account_data_used_title">Genutzte Daten</string>
+    <string name="account_data_used_body">Es werden nur Kategorien angefragt, die deine Werte und Verläufe brauchen.</string>
+    <string name="account_category_heart_rate">Herzfrequenz</string>
+    <string name="account_category_hrv">Herzratenvariabilität</string>
+    <string name="account_category_resting_heart_rate">Ruhepuls</string>
+    <string name="account_category_sleep">Schlaf</string>
+    <string name="account_category_steps">Schritte</string>
+    <string name="account_category_active_calories">Aktive Kalorien</string>
+    <string name="account_category_exercise">Training</string>
+    <string name="account_category_respiratory_rate">Atemfrequenz</string>
+    <string name="account_category_blood_oxygen">Sauerstoffsättigung</string>
+    <string name="account_category_skin_temperature">Hauttemperatur</string>
+    <string name="account_privacy_title">Datenschutz</string>
+    <string name="account_privacy_headline">Lokal verarbeitet</string>
+    <string name="account_privacy_body">Deine Gesundheitsdaten werden aus Health Connect gelesen und auf diesem Gerät verarbeitet. Ein Konto oder eine Cloud-Synchronisierung ist nicht nötig.</string>
+    <string name="account_your_data_title">Deine Daten</string>
+    <string name="account_export_body">Exportiere jeden gespeicherten Tag als CSV: Werte, Schlaf, HRV, Ruhepuls und Schritte.</string>
+    <string name="account_export_button">CSV exportieren</string>
+    <string name="account_export_in_progress">Wird exportiert…</string>
+    <string name="account_export_saved">Export gespeichert.</string>
+    <string name="account_export_failed">Export fehlgeschlagen. Wähle einen anderen Speicherort und versuche es erneut.</string>
+    <string name="account_year_label">Jahr</string>
+    <string name="account_year_error">Gib ein Jahr zwischen 1900 und %1$d ein.</string>
+    <string name="account_year_help">Wird nur zur Berechnung des altersbezogenen Kontexts verwendet.</string>
+    <string name="account_save">Speichern</string>
+    <string name="account_cancel">Abbrechen</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_subtitle">Erholung, Schlaf und Belastung aus den Daten, die deine Uhr ohnehin sammelt.</string>
+    <string name="onboarding_reads_title">Was Pulsar liest</string>
+    <string name="onboarding_reads_body">Alles wird über Health Connect gelesen und bleibt auf diesem Gerät.</string>
+    <string name="onboarding_category_heart_rate_hrv">Herzfrequenz und HRV</string>
+    <string name="onboarding_category_resting_heart_rate">Ruhepuls</string>
+    <string name="onboarding_category_sleep">Schlaf und Schlafphasen</string>
+    <string name="onboarding_category_activity">Schritte, Kalorien, Training</string>
+    <string name="onboarding_access">Zugriff</string>
+    <string name="onboarding_access_granted">Erteilt</string>
+    <string name="onboarding_access_not_granted">Nicht erteilt</string>
+    <string name="onboarding_grant_access">Health-Connect-Zugriff erteilen</string>
+    <string name="onboarding_about_you_title">Über dich</string>
+    <string name="onboarding_about_you_body">Dein Geburtsjahr legt deine geschätzte maximale Herzfrequenz fest und verankert das Vitalalter.</string>
+    <string name="onboarding_birth_year">Geburtsjahr</string>
+    <string name="onboarding_birth_year_error">Gib ein Jahr zwischen %1$d und %2$d ein.</string>
+    <string name="onboarding_continue">Weiter</string>
+    <string name="onboarding_morning_summary_title">Morgenübersicht</string>
+    <string name="onboarding_morning_summary_body">Eine Benachrichtigung jeden Morgen mit deiner Erholung, sobald die nächtliche Synchronisierung fertig ist.</string>
+    <string name="onboarding_notifications_enabled">Aktiviert</string>
+    <string name="onboarding_allow_notifications">Benachrichtigungen erlauben</string>
+    <string name="onboarding_calibration_note">Die Werte kalibrieren sich über etwa ein bis zwei Wochen auf dich. Bis dahin zeigt Pulsar einen Kalibrierungszustand statt einer Zahl, für die es noch nicht geradestehen kann.</string>
+    <string name="onboarding_health_connect_required">Health Connect erforderlich</string>
+    <string name="onboarding_health_connect_update">Health Connect braucht ein Update, bevor Pulsar deine Daten lesen kann.</string>
+    <string name="onboarding_health_connect_missing">Pulsar liest deine Daten über Health Connect, das noch nicht installiert ist.</string>
+    <string name="onboarding_open_play_store">Play Store öffnen</string>
+
+    <!-- Morning notification -->
+    <string name="notification_channel_morning_name">Morgendliche Erholung</string>
+    <string name="notification_channel_morning_description">Dein Erholungswert und deine Trainingsempfehlung jeden Morgen.</string>
+    <string name="notification_morning_title">Erholung %1$d%%</string>
+    <string name="notification_guidance_high">hohe Intensität</string>
+    <string name="notification_guidance_moderate">moderates Training</string>
+    <string name="notification_guidance_light">leichtes Training</string>
+    <string name="notification_guidance_rest">Ruhe und Erholung</string>
+    <string name="notification_morning_calibrating">Ausgangswert wird noch gelernt - %1$s</string>
+    <string name="notification_morning_summary">%1$s - %2$s</string>
+
+    <!-- Home screen widget -->
+    <string name="widget_description">Erholung, Schlaf und Belastung von heute auf einen Blick.</string>
+    <string name="widget_recovery_label">ERHOLUNG</string>
+    <string name="widget_sleep_label">Schlaf</string>
+    <string name="widget_effort_label">Belastung</string>
+    <string name="widget_calibrating">Kalibriert</string>
+    <string name="widget_effort_of_max">von 21</string>
+</resources>

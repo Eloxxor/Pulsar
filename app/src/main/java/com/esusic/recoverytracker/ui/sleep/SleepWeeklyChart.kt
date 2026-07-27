@@ -14,16 +14,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.esusic.recoverytracker.R
+import com.esusic.recoverytracker.ui.common.currentLocale
 import com.esusic.recoverytracker.ui.theme.AppColors
 import java.time.format.TextStyle
-import java.util.Locale
 
 @Composable
 fun SleepWeeklyChart(nights: List<SleepNightPoint>, modifier: Modifier = Modifier) {
     val maxMinutes = nights.maxOfOrNull { it.durationMinutes }?.coerceAtLeast(1L) ?: 1L
+    val locale = currentLocale()
     Row(
         modifier = modifier.fillMaxWidth().height(132.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -31,11 +34,15 @@ fun SleepWeeklyChart(nights: List<SleepNightPoint>, modifier: Modifier = Modifie
     ) {
         nights.forEach { night ->
             val barHeight = (88f * night.durationMinutes / maxMinutes).dp
-            val day = night.date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.ENGLISH)
+            val day = night.date.dayOfWeek.getDisplayName(TextStyle.NARROW, locale)
+            val spokenNight = stringResource(
+                R.string.sleep_week_bar_description,
+                day,
+                night.durationMinutes / 60,
+                night.durationMinutes % 60
+            )
             Column(
-                modifier = Modifier.semantics {
-                    contentDescription = "$day, ${night.durationMinutes / 60} hours ${night.durationMinutes % 60} minutes"
-                },
+                modifier = Modifier.semantics { contentDescription = spokenNight },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(7.dp)
             ) {

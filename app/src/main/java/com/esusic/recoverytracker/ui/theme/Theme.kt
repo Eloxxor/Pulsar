@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.sp
 
 private val DarkColors = darkColorScheme(
     primary = AppColors.Recovery,
-    secondary = AppColors.Strain,
+    secondary = AppColors.ActivityCyan,
     tertiary = AppColors.SleepViolet,
     error = AppColors.Danger,
     background = AppColors.Canvas,

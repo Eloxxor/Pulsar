@@ -9,6 +9,7 @@ import com.esusic.recoverytracker.data.local.DailyScoreEntity
 import com.esusic.recoverytracker.model.MetricDelta
 import com.esusic.recoverytracker.model.metricDelta
 import com.esusic.recoverytracker.ui.common.ChartPoint
+import com.esusic.recoverytracker.ui.common.TrendRange
 import com.esusic.recoverytracker.ui.date.SelectedDayStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,8 +19,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
-
-enum class ActivityRange(val days: Int) { WEEK(7), MONTH(30), QUARTER(90) }
 
 data class MetricTrend(
     val points: List<ChartPoint> = emptyList(),
@@ -38,7 +37,7 @@ data class ActivityUiState(
     val zoneMinutes: Int? = null,
     val latestHeartRateBpm: Long? = null,
     val hourlySteps: List<Int> = List(24) { 0 },
-    val range: ActivityRange = ActivityRange.WEEK,
+    val range: TrendRange = TrendRange.WEEK,
     val recovery: MetricTrend = MetricTrend(),
     val strain: MetricTrend = MetricTrend(),
     val hrv: MetricTrend = MetricTrend(),
@@ -47,7 +46,7 @@ data class ActivityUiState(
 
 private data class ActivitySnapshot(
     val date: LocalDate,
-    val range: ActivityRange,
+    val range: TrendRange,
     val scores: List<DailyScoreEntity>,
     val aggregates: List<DailyAggregateEntity>
 )
@@ -58,7 +57,7 @@ class ActivityViewModel(
     private val clock: Clock = Clock.systemDefaultZone(),
     private val selectedDayStore: SelectedDayStore = SelectedDayStore(clock)
 ) : ViewModel() {
-    private val selectedRange = MutableStateFlow(ActivityRange.WEEK)
+    private val selectedRange = MutableStateFlow(TrendRange.WEEK)
     private val _uiState = MutableStateFlow(
         ActivityUiState(selectedDate = selectedDayStore.selectedDate.value)
     )
@@ -69,15 +68,15 @@ class ActivityViewModel(
             combine(
                 selectedDayStore.selectedDate,
                 selectedRange,
-                repository.observeRecentScores(ActivityRange.QUARTER.days),
-                repository.observeRecentAggregates(ActivityRange.QUARTER.days)
+                repository.observeRecentScores(TrendRange.QUARTER.days),
+                repository.observeRecentAggregates(TrendRange.QUARTER.days)
             ) { date, range, scores, aggregates ->
                 ActivitySnapshot(date, range, scores, aggregates)
             }.collectLatest(::publishSnapshot)
         }
     }
 
-    fun selectRange(range: ActivityRange) {
+    fun selectRange(range: TrendRange) {
         selectedRange.value = range
     }
 

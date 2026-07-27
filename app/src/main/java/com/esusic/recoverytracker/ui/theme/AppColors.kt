@@ -13,13 +13,17 @@ object AppColors {
     val NavBar = Color(0xF2111420)
 
     val Recovery = Color(0xFF00D89F)
+
+    // Effort/strain is always cyan; Movement (steps, hourly bars) is the warm counterpart.
+    // Keep these two apart - the same metric must not change colour between screens.
     val ActivityCyan = Color(0xFF13C8E8)
-    val Strain = Color(0xFFFF6B35)
+    val Movement = Color(0xFFFF6B35)
     val SleepViolet = Color(0xFF8A5CFF)
     val Hrv = Color(0xFF3478FF)
     val Rhr = Color(0xFFF13B91)
     val HeartRate = Color(0xFFFF477E)
     val VitalAge = Color(0xFFF7B84B)
+    val Journal = Color(0xFFB8C24C)
     val Warning = Color(0xFFFFB43A)
     val Danger = Color(0xFFFF5A68)
 

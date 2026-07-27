@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.esusic.recoverytracker.R
 import com.esusic.recoverytracker.ui.theme.AppColors
 import java.time.Duration
 import java.time.Instant
@@ -55,14 +57,23 @@ fun SleepHeartRateChart(
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             if (selectedBucket != null) {
                 SummaryStat(
-                    "${selectedBucket.avgBpm.roundToInt()} bpm",
+                    stringResource(
+                        R.string.sleep_heart_rate_bpm,
+                        selectedBucket.avgBpm.roundToInt()
+                    ),
                     timeFormatter.withZone(zone).format(selectedBucket.time)
                 )
             } else {
                 val low = buckets.minOfOrNull { it.avgBpm }?.roundToInt()
                 val avg = buckets.takeIf { it.isNotEmpty() }?.map { it.avgBpm }?.average()?.roundToInt()
-                SummaryStat(low?.let { "$it bpm" } ?: "--", "low")
-                SummaryStat(avg?.let { "$it bpm" } ?: "--", "avg")
+                SummaryStat(
+                    low?.let { stringResource(R.string.sleep_heart_rate_bpm, it) } ?: "--",
+                    stringResource(R.string.sleep_heart_rate_low)
+                )
+                SummaryStat(
+                    avg?.let { stringResource(R.string.sleep_heart_rate_bpm, it) } ?: "--",
+                    stringResource(R.string.sleep_heart_rate_avg)
+                )
             }
         }
 

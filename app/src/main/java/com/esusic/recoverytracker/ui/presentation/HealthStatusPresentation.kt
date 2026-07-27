@@ -1,62 +1,97 @@
 package com.esusic.recoverytracker.ui.presentation
 
-data class StatusCopy(val label: String, val message: String)
+import androidx.annotation.StringRes
+import com.esusic.recoverytracker.R
+
+// Resource ids rather than strings: these bands are read from Composables, from the widget's
+// RemoteViews and from a notification, none of which share a way to resolve text.
+data class StatusCopy(@get:StringRes val label: Int, @get:StringRes val message: Int)
 
 fun recoveryStatus(score: Int?, calibrating: Boolean): StatusCopy = when {
     calibrating -> StatusCopy(
-        "Learning your baseline",
-        "A few more days will improve this score."
+        R.string.status_recovery_calibrating_label,
+        R.string.status_recovery_calibrating_message
     )
     score == null -> StatusCopy(
-        "No score yet",
-        "Sync Health Connect to calculate recovery."
+        R.string.status_recovery_none_label,
+        R.string.status_recovery_none_message
     )
-    score >= 80 -> StatusCopy("Optimal", "You are well recovered.")
-    score >= 60 -> StatusCopy("Ready", "Good capacity for a normal day.")
-    score >= 40 -> StatusCopy("Balanced", "Keep intensity controlled.")
-    else -> StatusCopy("Recover", "Prioritize rest and easy movement.")
+    score >= 80 -> StatusCopy(
+        R.string.status_recovery_optimal_label,
+        R.string.status_recovery_optimal_message
+    )
+    score >= 60 -> StatusCopy(
+        R.string.status_recovery_ready_label,
+        R.string.status_recovery_ready_message
+    )
+    score >= 40 -> StatusCopy(
+        R.string.status_recovery_balanced_label,
+        R.string.status_recovery_balanced_message
+    )
+    else -> StatusCopy(
+        R.string.status_recovery_low_label,
+        R.string.status_recovery_low_message
+    )
 }
 
 fun effortStatus(strain: Double?): StatusCopy = when {
     strain == null -> StatusCopy(
-        "No load yet",
-        "Activity will appear after the next sync."
+        R.string.status_effort_none_label,
+        R.string.status_effort_none_message
     )
-    strain >= 16.0 -> StatusCopy("High", "A demanding day. Leave room for recovery.")
+    strain >= 16.0 -> StatusCopy(
+        R.string.status_effort_high_label,
+        R.string.status_effort_high_message
+    )
     strain >= 10.0 -> StatusCopy(
-        "Productive",
-        "Meaningful load without reaching the top range."
+        R.string.status_effort_productive_label,
+        R.string.status_effort_productive_message
     )
-    strain >= 5.0 -> StatusCopy("Light", "Light activity is accumulating.")
-    else -> StatusCopy("Resting", "Your current load is low.")
+    strain >= 5.0 -> StatusCopy(
+        R.string.status_effort_light_label,
+        R.string.status_effort_light_message
+    )
+    else -> StatusCopy(
+        R.string.status_effort_resting_label,
+        R.string.status_effort_resting_message
+    )
 }
 
 fun sleepStatus(performance: Int?): StatusCopy = when {
     performance == null -> StatusCopy(
-        "No score yet",
-        "Sleep detail will appear after a recorded night."
+        R.string.status_sleep_none_label,
+        R.string.status_sleep_none_message
     )
-    performance >= 85 -> StatusCopy("Excellent", "Strong duration and sleep quality.")
-    performance >= 70 -> StatusCopy("Good", "A solid night with some room to improve.")
+    performance >= 85 -> StatusCopy(
+        R.string.status_sleep_excellent_label,
+        R.string.status_sleep_excellent_message
+    )
+    performance >= 70 -> StatusCopy(
+        R.string.status_sleep_good_label,
+        R.string.status_sleep_good_message
+    )
     performance >= 50 -> StatusCopy(
-        "Fair",
-        "Protect recovery and aim for more sleep tonight."
+        R.string.status_sleep_fair_label,
+        R.string.status_sleep_fair_message
     )
-    else -> StatusCopy("Low", "A lighter day may help you recover.")
+    else -> StatusCopy(
+        R.string.status_sleep_low_label,
+        R.string.status_sleep_low_message
+    )
 }
 
+@StringRes
 fun todayRecommendation(
     recovery: Int?,
     strain: Double?,
     sleep: Int?,
     calibrating: Boolean
-): String = when {
-    calibrating -> "Keep wearing your tracker to build a reliable baseline."
-    recovery == null -> "Sync your latest health data to get a daily recommendation."
-    recovery < 40 -> "Prioritize rest and easy movement today."
-    (strain ?: 0.0) >= 16.0 -> "Your load is already high. Keep the rest of today easy."
-    recovery >= 80 && (sleep ?: 0) >= 70 ->
-        "You have capacity for a challenging session today."
-    recovery >= 60 -> "A normal training day fits your current recovery."
-    else -> "Choose controlled intensity and reassess how you feel."
+): Int = when {
+    calibrating -> R.string.recommendation_calibrating
+    recovery == null -> R.string.recommendation_no_data
+    recovery < 40 -> R.string.recommendation_rest
+    (strain ?: 0.0) >= 16.0 -> R.string.recommendation_load_already_high
+    recovery >= 80 && (sleep ?: 0) >= 70 -> R.string.recommendation_challenge
+    recovery >= 60 -> R.string.recommendation_normal_day
+    else -> R.string.recommendation_controlled
 }

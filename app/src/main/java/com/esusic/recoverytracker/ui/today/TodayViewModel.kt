@@ -44,6 +44,7 @@ data class TodayUiState(
     val latestHeartRateEpochMillis: Long? = null,
     val lastSyncedAtEpochMillis: Long? = null,
     val hasAllPermissions: Boolean = true,
+    val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val hrvSubScore: Double? = null,
     val rhrSubScore: Double? = null,
@@ -109,7 +110,11 @@ class TodayViewModel(
 
             val hasPermissions = healthDataSource.hasAllPermissions()
             if (!hasPermissions) {
-                _uiState.value = _uiState.value.copy(hasAllPermissions = false, isRefreshing = false)
+                _uiState.value = _uiState.value.copy(
+                    hasAllPermissions = false,
+                    isLoading = false,
+                    isRefreshing = false
+                )
                 return
             }
 
@@ -194,6 +199,7 @@ class TodayViewModel(
                 latestHeartRateEpochMillis = aggregate?.latestHeartRateEpochMillis,
                 lastSyncedAtEpochMillis = score?.lastSyncedAtEpochMillis,
                 hasAllPermissions = true,
+                isLoading = false,
                 isRefreshing = false,
                 hrvSubScore = score?.hrvSubScore,
                 rhrSubScore = score?.rhrSubScore,

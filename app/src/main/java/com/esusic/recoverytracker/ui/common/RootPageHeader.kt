@@ -21,8 +21,10 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.esusic.recoverytracker.R
 import com.esusic.recoverytracker.ui.theme.AppColors
 
 @Composable
@@ -66,7 +68,7 @@ fun RootPageHeader(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Previous day"
+                            contentDescription = stringResource(R.string.common_previous_day)
                         )
                     }
                     VerticalDivider(
@@ -80,7 +82,7 @@ fun RootPageHeader(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Next day"
+                            contentDescription = stringResource(R.string.common_next_day)
                         )
                     }
                 }

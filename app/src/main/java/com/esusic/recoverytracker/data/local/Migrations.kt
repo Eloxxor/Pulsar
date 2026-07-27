@@ -11,3 +11,12 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         db.execSQL("ALTER TABLE daily_scores ADD COLUMN zoneMinutes INTEGER")
     }
 }
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `journal_entries` (" +
+                "`date` TEXT NOT NULL, `tag` TEXT NOT NULL, PRIMARY KEY(`date`, `tag`))"
+        )
+    }
+}

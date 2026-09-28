@@ -1,66 +1,66 @@
 # Pulsar
 
-Pulsar ist eine lokale Android-App für Erholung, Schlaf und Trainingsbelastung. Sie liest Gesundheitsdaten über Health Connect, berechnet daraus verständliche Tageswerte und stellt sie in einem dunklen, neonbetonten Dashboard dar.
+Pulsar is a local Android app for recovery, sleep, and training load. It reads health data through Health Connect, turns it into clear daily insights, and presents everything in a dark, neon-accented dashboard.
 
-> Pulsar liefert Wellness- und Trainingskontext. Die angezeigten Werte sind keine medizinische Diagnose.
+> Pulsar provides wellness and training context. Its insights are not a medical diagnosis.
 
-## Funktionen
+## Features
 
-- täglicher Erholungswert auf Basis persönlicher Ausgangswerte
-- Belastungs-, Schlaf-, HRV- und Ruhepuls-Auswertung
-- globale Tagesauswahl für Home, Schlaf und Aktivität
-- nachvollziehbare Vital-Age-Schätzung mit gewichteten Einflussfaktoren
-- Journal mit Auswertung möglicher Zusammenhänge zur Erholung
-- Drei-Ringe-Widget für Erholung, Schlaf und Belastung
-- optionale morgendliche Zusammenfassung als Benachrichtigung
-- CSV-Export der lokal gespeicherten Tageswerte
-- deutsche und englische Benutzeroberfläche
+- daily recovery score based on personal baselines
+- training load, sleep, HRV, and resting heart rate insights
+- shared date selection across Home, Sleep, and Activity
+- transparent Vital Age estimate with weighted contributing factors
+- journal with correlations between habits and recovery
+- three-ring widget for recovery, sleep, and training load
+- optional morning summary notification
+- CSV export of locally stored daily data
+- English and German user interface
 
-## Datenschutz
+## Privacy
 
-Pulsar benötigt kein Benutzerkonto und keine eigene Cloud. Gesundheitsdaten werden über Health Connect gelesen und auf dem Gerät verarbeitet. Exporte werden nur auf ausdrückliche Aktion des Nutzers erstellt.
+Pulsar requires no user account and uses no proprietary cloud service. Health data is read through Health Connect and processed on the device. Exports are created only when explicitly requested by the user.
 
-## Technischer Aufbau
+## Tech stack
 
-- Kotlin und Jetpack Compose
+- Kotlin and Jetpack Compose
 - Material 3
 - Health Connect
 - Room
 - DataStore
 - WorkManager
-- MVVM mit Kotlin Flows und Coroutines
+- MVVM with Kotlin Flows and Coroutines
 
-## Voraussetzungen
+## Requirements
 
-- Android-Gerät mit Health Connect
-- Android Studio mit JDK 17
+- Android device with Health Connect
+- Android Studio with JDK 17
 - Android SDK 36
 
-## Lokal bauen
+## Build locally
 
-Repository klonen und im Projektverzeichnis ausführen:
+Clone the repository and run the following commands from the project directory:
 
 ```powershell
 .\gradlew.bat testDebugUnitTest
 .\gradlew.bat assembleDebug
 ```
 
-Die Debug-APK liegt anschließend unter:
+The debug APK will be available at:
 
 ```text
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Installation auf einem per ADB verbundenen Gerät:
+Install it on an ADB-connected device with:
 
 ```powershell
 adb install -r app\build\outputs\apk\debug\app-debug.apk
 ```
 
-## Projektstatus
+## Project status
 
-Pulsar befindet sich in aktiver Entwicklung. Scoring und Vital Age sind transparente, app-eigene Wellness-Schätzungen und ersetzen keine professionelle medizinische Bewertung.
+Pulsar is under active development. Its scoring and Vital Age features are transparent, app-specific wellness estimates and do not replace professional medical advice.
 
-## Lizenz
+## License
 
-Dieses Repository besitzt derzeit keine Open-Source-Lizenz. Alle Rechte bleiben vorbehalten.
+This repository currently has no open-source license. All rights reserved.

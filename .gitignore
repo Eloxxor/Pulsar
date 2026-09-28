@@ -1,6 +1,8 @@
 # Subagent-driven-development scratch (progress ledger, briefs, reports)
 .superpowers/
 .worktrees/
+.claude/
+.claude-flow/
 
 # Android/Gradle
 *.iml
